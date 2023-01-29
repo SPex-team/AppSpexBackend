@@ -1,0 +1,59 @@
+{
+  "receiver": "web\\.hook",
+  "status": "resolved",
+  "alerts": [
+    {
+      "status": "resolved",
+      "labels": {
+        "address": "0x0002",
+        "alertname": "alert_name_1",
+        "instance": "192.168.19.22:9016",
+        "job": "file_sd_node",
+        "label_1": "label_1_value",
+        "project": "rust_web3"
+      },
+      "annotations": {
+        "summary": "sssssss"
+      },
+      "startsAt": "2022-10-17T07:51:41.543Z",
+      "endsAt": "2022-10-17T08:01:56.543Z",
+      "generatorURL": "http://192-168-1-128:9090/graph?g0.expr=requests_2+%3E+40&g0.tab=1",
+      "fingerprint": "e73993d7f7e904fd"
+    },
+    {
+      "status": "resolved",
+      "labels": {
+        "address": "0x0003",
+        "alertname": "alert_name_1",
+        "instance": "192.168.19.22:9016",
+        "job": "file_sd_node",
+        "label_1": "label_1_value",
+        "project": "rust_web3"
+      },
+      "annotations": {
+        "summary": "sssssss"
+      },
+      "startsAt": "2022-10-17T07:51:41.543Z",
+      "endsAt": "2022-10-17T08:01:56.543Z",
+      "generatorURL": "http://192-168-1-128:9090/graph?g0.expr=requests_2+%3E+40&g0.tab=1",
+      "fingerprint": "e91919022e127d68"
+    }
+  ],
+  "groupLabels": {
+    "alertname": "alert_name_1"
+  },
+  "commonLabels": {
+    "alertname": "alert_name_1",
+    "instance": "192.168.19.22:9016",
+    "job": "file_sd_node",
+    "label_1": "label_1_value",
+    "project": "rust_web3"
+  },
+  "commonAnnotations": {
+    "summary": "sssssss"
+  },
+  "externalURL": "http://192-168-1-128:9093",
+  "version": "4",
+  "groupKey": "{}:{alertname=\"alert_name_1\"}",
+  "truncatedAlerts": 0
+}

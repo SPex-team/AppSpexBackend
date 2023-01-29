@@ -1,0 +1,1 @@
+{% for status in conditions.status %}operator_status{id="{{ conditions.operator }}", project="ssv"}=={{status}}{% if not loop.last %} or {% endif %}{% endfor %}
