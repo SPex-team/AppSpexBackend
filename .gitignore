@@ -1,0 +1,11 @@
+*.log
+*.log.[12345]
+*.py[cod]
+*.pid
+*.db
+*.swp
+
+# Editor directories and files
+.idea
+
+AppSpexBackend/settings*.py
