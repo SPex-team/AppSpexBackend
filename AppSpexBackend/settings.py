@@ -92,8 +92,8 @@ DATABASES = {
         'NAME': 'spex',
         'USER': 'root',
         'PASSWORD': 'wonders,1',
-        'HOST': 'localhost',
-        'PORT': '3306'
+        'HOST': '192.168.1.128',
+        'PORT': '3308'
     }
 }
 
