@@ -1,3 +1,4 @@
+import time
 
 from rest_framework import serializers
 
@@ -27,3 +28,7 @@ class Order(serializers.ModelSerializer):
 
 class ListMinerBuy(serializers.Serializer):
     buyer = serializers.CharField(max_length=42)
+
+
+class ListMinerArgs(serializers.Serializer):
+    price = serializers.IntegerField()
