@@ -3,7 +3,7 @@ from django.db import models
 
 class Miner(models.Model):
     miner_id = models.CharField(max_length=20, primary_key=True)
-    owner = models.CharField(max_length=42)
+    owner = models.CharField(max_length=200)
     is_list = models.BooleanField(default=False)
     price = models.IntegerField(default=0)
     list_time = models.BigIntegerField(default=1675156423)
