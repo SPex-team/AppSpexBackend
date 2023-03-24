@@ -1,3 +1,4 @@
+import logging
 import time
 from datetime import datetime
 
@@ -6,8 +7,16 @@ from . import serializers as l_serializers
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from rest_framework import exceptions
 
 from django.db.transaction import atomic
+from django.conf import settings
+
+from . import tasks as l_tasks
+from .others.filecoin import FilecoinClient
+from .others.keytool import Keytool
+
+logger = logging.getLogger(__name__)
 
 
 class Miner(viewsets.ModelViewSet):
@@ -16,8 +25,21 @@ class Miner(viewsets.ModelViewSet):
 
     permission_classes = []
 
-    filterset_fields = ("owner", "is_list")
+    filter_fields = ("owner", "is_list")
     ordering_fields = ("list_time", )
+
+    @atomic
+    @action(methods=["post"], detail=True, url_path="update")
+    def c_update(self, request, *args, **kwargs):
+        miner = self.get_object()
+        try:
+            l_tasks.sync_miner(miner)
+        except Exception as exc:
+            raise exceptions.ParseError(f"Failed to update miner: {exc}")
+        data = {
+            "details": "OK"
+        }
+        return Response(data)
 
     @atomic
     @action(methods=["post"], detail=True, url_path="buy")
@@ -54,6 +76,16 @@ class Miner(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+    # @atomic
+    # @action(methods=["post"], detail=False, url_path="test")
+    # def c_test(self, request, *args, **kwargs):
+    #     l_tasks.sync_miner()
+    #     data = {
+    #         "details": "OK"
+    #     }
+    #     return Response(data)
+
+
 class ListMiner(viewsets.ModelViewSet):
     queryset = l_models.ListMiner.objects.all()
     serializer_class = l_serializers.ListMiner
@@ -83,3 +115,64 @@ class Order(viewsets.ModelViewSet):
     serializer_class = l_serializers.Order
 
     permission_classes = []
+
+
+class Message(viewsets.GenericViewSet):
+
+    permission_classes = []
+
+    @action(methods=["post"], detail=False, url_path="build")
+    def c_build_change_owner(self, request, *args, **kwargs):
+        params_serializer = l_serializers.BuildChangeOwner(data=request.data)
+        params_serializer.is_valid(raise_exception=True)
+        filecoin_client = FilecoinClient(settings.ETH_HTTP_PROVIDER)
+        miner_id = params_serializer.validated_data['miner_id']
+        miner_id_str = f"t0{miner_id}"
+        try:
+            miner_info = filecoin_client.get_miner_info(miner_id=miner_id)
+        except Exception as exc:
+            logger.debug(f"get miner {miner_id} info error: {exc}")
+            raise exceptions.ParseError(f"get miner info error: {exc}")
+        try:
+            keytool = Keytool(settings.KEY_TOOL_PATH)
+        except Exception as exc:
+            logger.debug(f"Build miner {miner_id} message error: {exc}")
+            raise exceptions.ParseError(f"Build message error: {exc}")
+        msg_cid_hex, msg_cid_str, msg_hex, msg_detail = keytool.build_message(miner_info["Owner"], miner_id_str, f'"{settings.SPEX_CONTRACT_T0_ADDRESS}"')
+        data = {
+            "msg_cid_hex": msg_cid_hex,
+            "msg_cid_str": msg_cid_str,
+            "msg_hex": msg_hex,
+            "msg_detail": msg_detail,
+            "miner_info": miner_info
+        }
+        return Response(data)
+
+    @action(methods=["post"], detail=False, url_path="push")
+    def c_push_message(self, request, *args, **kwargs):
+        params_serializer = l_serializers.PushMessage(data=request.data)
+        params_serializer.is_valid(raise_exception=True)
+        keytool = Keytool(settings.KEY_TOOL_PATH)
+        message = params_serializer.validated_data["message"]
+        sign = params_serializer.validated_data["sign"]
+        try:
+            keytool.push_message_spex(message=message, sign=sign)
+        except Exception as exc:
+            logger.debug(f"Push message error, message: {message} sign: {sign}")
+            raise exceptions.ParseError(f"Push message error: {exc}")
+        data = {}
+        if params_serializer.validated_data["wait"]:
+            cid = params_serializer.validated_data["cid"]
+            filecoin_client = FilecoinClient(settings.ETH_HTTP_PROVIDER)
+            try:
+                filecoin_client.wait_message(cid)
+            except Exception as exc:
+                logger.debug(f"wait message error, cid: {cid} exc: {exc}")
+        return Response(data)
+
+    # @action(methods=["post"], detail=False, url_path="push-wait")
+    # def c_push_wait_message(self, request, *args, **kwargs):
+    #     pass
+
+
+
