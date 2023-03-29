@@ -34,8 +34,13 @@ class ListMinerArgs(serializers.Serializer):
     price = serializers.IntegerField()
 
 
-class BuildChangeOwner(serializers.Serializer):
+class BuildChangeOwnerIn(serializers.Serializer):
     miner_id = serializers.IntegerField()
+
+
+class BuildChangeOwnerOut(serializers.Serializer):
+    miner_id = serializers.IntegerField()
+    new_owner_address = serializers.CharField()
 
 
 class PushMessage(serializers.Serializer):

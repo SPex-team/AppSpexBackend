@@ -16,6 +16,10 @@ from . import tasks as l_tasks
 from .others.filecoin import FilecoinClient
 from .others.keytool import Keytool
 
+from . import filters as l_filters
+from django_filters.rest_framework import DjangoFilterBackend
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -25,7 +29,8 @@ class Miner(viewsets.ModelViewSet):
 
     permission_classes = []
 
-    filter_fields = ("owner", "is_list")
+    # filter_class = l_filters.Miner
+    filterset_fields = ("owner", "is_list")
     ordering_fields = ("list_time", )
 
     @atomic
@@ -33,13 +38,14 @@ class Miner(viewsets.ModelViewSet):
     def c_update(self, request, *args, **kwargs):
         miner = self.get_object()
         try:
-            l_tasks.sync_miner(miner)
+            l_tasks.update_miner(miner)
         except Exception as exc:
             raise exceptions.ParseError(f"Failed to update miner: {exc}")
-        data = {
-            "details": "OK"
-        }
-        return Response(data)
+        serializer = l_serializers.Miner(miner)
+        # data = {
+        #     "details": "OK"
+        # }
+        return Response(serializer.data)
 
     @atomic
     @action(methods=["post"], detail=True, url_path="buy")
@@ -121,9 +127,9 @@ class Message(viewsets.GenericViewSet):
 
     permission_classes = []
 
-    @action(methods=["post"], detail=False, url_path="build")
-    def c_build_change_owner(self, request, *args, **kwargs):
-        params_serializer = l_serializers.BuildChangeOwner(data=request.data)
+    @action(methods=["post"], detail=False, url_path="build-change-owner-in")
+    def c_build_change_owner_in(self, request, *args, **kwargs):
+        params_serializer = l_serializers.BuildChangeOwnerIn(data=request.data)
         params_serializer.is_valid(raise_exception=True)
         filecoin_client = FilecoinClient(settings.ETH_HTTP_PROVIDER)
         miner_id = params_serializer.validated_data['miner_id']
@@ -148,6 +154,27 @@ class Message(viewsets.GenericViewSet):
         }
         return Response(data)
 
+    @action(methods=["post"], detail=False, url_path="build-change-owner-out")
+    def c_build_change_owner_out(self, request, *args, **kwargs):
+        params_serializer = l_serializers.BuildChangeOwnerOut(data=request.data)
+        params_serializer.is_valid(raise_exception=True)
+        miner_id = params_serializer.validated_data['miner_id']
+        miner_id_str = f"t0{miner_id}"
+        new_owner_address = params_serializer.validated_data["new_owner_address"]
+        try:
+            keytool = Keytool(settings.KEY_TOOL_PATH)
+        except Exception as exc:
+            logger.debug(f"Build miner {miner_id} message error: {exc}")
+            raise exceptions.ParseError(f"Build message error: {exc}")
+        msg_cid_hex, msg_cid_str, msg_hex, msg_detail = keytool.build_message(new_owner_address, miner_id_str, f'"{new_owner_address}"')
+        data = {
+            "msg_cid_hex": msg_cid_hex,
+            "msg_cid_str": msg_cid_str,
+            "msg_hex": msg_hex,
+            "msg_detail": msg_detail,
+        }
+        return Response(data)
+
     @action(methods=["post"], detail=False, url_path="push")
     def c_push_message(self, request, *args, **kwargs):
         params_serializer = l_serializers.PushMessage(data=request.data)
@@ -156,7 +183,8 @@ class Message(viewsets.GenericViewSet):
         message = params_serializer.validated_data["message"]
         sign = params_serializer.validated_data["sign"]
         try:
-            keytool.push_message_spex(message=message, sign=sign)
+            # keytool.push_message_spex(message=message, sign=sign)
+            time.sleep(10)
         except Exception as exc:
             logger.debug(f"Push message error, message: {message} sign: {sign}")
             raise exceptions.ParseError(f"Push message error: {exc}")

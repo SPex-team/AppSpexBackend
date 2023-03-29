@@ -14,19 +14,11 @@ app.autodiscover_tasks()
 
 app.conf.beat_schedule = {
     'create_alert': {
-        'task': 'alerting.tasks.create_alert',
+        'task': 'spex.tasks.sync_new_miners',
         'schedule': 60
     },
     'first_action': {
-        'task': 'alerting.tasks.first_action',
+        'task': 'spex.tasks.update_all_miners',
         'schedule': 60 * 2
-    },
-    'no_confirm_reminder': {
-        'task': 'alerting.tasks.no_confirm_reminder',
-        'schedule': 86400
-    },
-    'update_rule': {
-        'task': 'prom.tasks.update_rule',
-        'schedule': 300
     }
 }

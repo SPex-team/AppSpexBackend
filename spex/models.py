@@ -6,6 +6,8 @@ class Miner(models.Model):
     owner = models.CharField(max_length=200)
     is_list = models.BooleanField(default=False)
     price = models.FloatField(default=0)
+    price_raw = models.CharField(max_length=50, blank=True, default="")
+    balance_human = models.FloatField(default=0)
     list_time = models.BigIntegerField(default=1675156423)
 
 
