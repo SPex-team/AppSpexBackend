@@ -94,7 +94,7 @@ def update_miner(miner: l_models.Miner):
 def update_all_miners():
     # sync_height_str = l_models.Tag.objects.get_or_create(key="MINER_SYNC_HEIGHT")
     # sync_height = int(sync_height_str)
-    spex_contract = SpexContract(settings.ETHE_HTTP_PROVIDER, settings.ETH_CONTRACT_ADDRESS, settings.ETH_CONTRACT_ABI_STR)
+    # spex_contract = SpexContract(settings.ETHE_HTTP_PROVIDER, settings.ETH_CONTRACT_ADDRESS, settings.ETH_CONTRACT_ABI_STR)
 
     miner_qs = l_models.Miner.objects.all()
     for miner in miner_qs:

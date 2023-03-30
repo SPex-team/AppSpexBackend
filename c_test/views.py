@@ -25,5 +25,5 @@ class TestUser(viewsets.ModelViewSet):
         html_message = "<h1>HHHHHHH</h1>"
         # send_mail("AAA", "mmm", from_email=settings.EMAIL_HOST_USER, recipient_list=["mingmingtang@aliyun.com"],
         #           html_message=html_message)
-        spex_tasks.sync_new_miners()
+        spex_tasks.update_all_miners()
         return Response({})

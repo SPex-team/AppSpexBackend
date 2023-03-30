@@ -10,6 +10,6 @@ def get_miner_balance(miner_id: str):
         None
     ]
     ret_data = filecoin_client.request(method="Filecoin.StateGetActor", params=params)
-    balance_human = round(ret_data["Balance"] / 1e18, 2)
+    balance_human = round(int(ret_data["Balance"]) / 1e18, 2)
     return balance_human
 
