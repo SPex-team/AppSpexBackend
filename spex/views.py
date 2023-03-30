@@ -139,12 +139,13 @@ class Message(viewsets.GenericViewSet):
         except Exception as exc:
             logger.debug(f"get miner {miner_id} info error: {exc}")
             raise exceptions.ParseError(f"get miner info error: {exc}")
+        keytool = Keytool(settings.KEY_TOOL_PATH)
         try:
-            keytool = Keytool(settings.KEY_TOOL_PATH)
+            msg_cid_hex, msg_cid_str, msg_hex, msg_detail = keytool.build_message(miner_info["Owner"], miner_id_str,
+                                                                                  f'"{settings.SPEX_CONTRACT_T0_ADDRESS}"')
         except Exception as exc:
             logger.debug(f"Build miner {miner_id} message error: {exc}")
             raise exceptions.ParseError(f"Build message error: {exc}")
-        msg_cid_hex, msg_cid_str, msg_hex, msg_detail = keytool.build_message(miner_info["Owner"], miner_id_str, f'"{settings.SPEX_CONTRACT_T0_ADDRESS}"')
         data = {
             "msg_cid_hex": msg_cid_hex,
             "msg_cid_str": msg_cid_str,
@@ -161,12 +162,13 @@ class Message(viewsets.GenericViewSet):
         miner_id = params_serializer.validated_data['miner_id']
         miner_id_str = f"t0{miner_id}"
         new_owner_address = params_serializer.validated_data["new_owner_address"]
+        keytool = Keytool(settings.KEY_TOOL_PATH)
         try:
-            keytool = Keytool(settings.KEY_TOOL_PATH)
+            msg_cid_hex, msg_cid_str, msg_hex, msg_detail = keytool.build_message(new_owner_address, miner_id_str,
+                                                                                  f'"{new_owner_address}"')
         except Exception as exc:
             logger.debug(f"Build miner {miner_id} message error: {exc}")
             raise exceptions.ParseError(f"Build message error: {exc}")
-        msg_cid_hex, msg_cid_str, msg_hex, msg_detail = keytool.build_message(new_owner_address, miner_id_str, f'"{new_owner_address}"')
         data = {
             "msg_cid_hex": msg_cid_hex,
             "msg_cid_str": msg_cid_str,
@@ -183,8 +185,8 @@ class Message(viewsets.GenericViewSet):
         message = params_serializer.validated_data["message"]
         sign = params_serializer.validated_data["sign"]
         try:
-            # keytool.push_message_spex(message=message, sign=sign)
-            time.sleep(10)
+            keytool.push_message_spex(message=message, sign=sign)
+            # time.sleep(2)
         except Exception as exc:
             logger.debug(f"Push message error, message: {message} sign: {sign}")
             raise exceptions.ParseError(f"Push message error: {exc}")
