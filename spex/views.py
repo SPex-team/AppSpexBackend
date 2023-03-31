@@ -33,6 +33,13 @@ class Miner(viewsets.ModelViewSet):
     filterset_fields = ("owner", "is_list")
     ordering_fields = ("list_time", )
 
+
+    @action(methods=["post"], detail=False, url_path="sync-new-miners")
+    def c_sync_new_miners(self, request, *args, **kwargs):
+        l_tasks.sync_new_miners()
+        data = {}
+        return Response(data)
+
     @atomic
     @action(methods=["post"], detail=True, url_path="update")
     def c_update(self, request, *args, **kwargs):
