@@ -191,6 +191,9 @@ class Message(viewsets.GenericViewSet):
         keytool = Keytool(settings.KEY_TOOL_PATH)
         message = params_serializer.validated_data["message"]
         sign = params_serializer.validated_data["sign"]
+        # if settings.ENV == "LOCAL":
+        #     time.sleep(5)
+        #     return Response({})
         try:
             keytool.push_message_spex(message=message, sign=sign)
             # time.sleep(2)

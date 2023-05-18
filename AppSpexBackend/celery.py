@@ -13,11 +13,11 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 app.autodiscover_tasks()
 
 app.conf.beat_schedule = {
-    'create_alert': {
+    'sync_new_miners': {
         'task': 'spex.tasks.sync_new_miners',
         'schedule': 60
     },
-    'first_action': {
+    'update_all_miners': {
         'task': 'spex.tasks.update_all_miners',
         'schedule': 60 * 2
     }

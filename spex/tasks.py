@@ -24,7 +24,7 @@ from web3.middleware import geth_poa_middleware
 def get_spex_contract():
     w3 = Web3(Web3.HTTPProvider(settings.ETH_HTTP_PROVIDER))
     w3.middleware_onion.inject(geth_poa_middleware, layer=0)
-    address = Web3.toChecksumAddress(settings.ETH_CONTRACT_ADDRESS)
+    address = Web3.to_checksum_address(settings.ETH_CONTRACT_ADDRESS)
     contract = w3.eth.contract(address=address, abi=json.loads(settings.ETH_CONTRACT_ABI_STR))
     return contract
 
@@ -51,7 +51,7 @@ def add_empty_miner_save_index(miner_id: int, tag: l_models.Tag, index: int):
             is_list=False,
         )
     except IntegrityError as exc:
-        logger.warning(f"Add miner {miner_id} error: {exc}")
+            logger.warning(f"Add miner {miner_id} error: {exc}")
     tag.value = str(index)
     tag.save()
 
@@ -102,3 +102,13 @@ def update_all_miners():
             update_miner(miner)
         except Exception as exc:
             logger.error(f"Failed sync miner {miner.id}, exc: {exc}")
+
+
+@shared_task
+def listen_sync_new_miners():
+    spex_contract = get_spex_contract()
+    event_filter = spex_contract.events.EventMinerInContract.create_filter(fromBlock="latest")
+    for event in event_filter.get_new_entries():
+        pass
+
+
