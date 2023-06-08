@@ -74,19 +74,24 @@ def sync_new_miners():
 def update_miner(miner: l_models.Miner):
     spex_contract = get_spex_contract()
     owner = spex_contract.functions.getOwnerById(miner.miner_id).call()
+    owner = owner.lower()
     if owner == "0x0000000000000000000000000000000000000000":
         miner.delete()
         return
     miner.owner = owner
     list_miner_info = spex_contract.functions.getListMinerById(miner.miner_id).call()
     miner.is_list = False if list_miner_info[0] == 0 else True
-    miner.price = list_miner_info[2] / 1e18
-    miner.price_raw = str(list_miner_info[2])
-    miner.list_time = list_miner_info[3]
+    miner.price = list_miner_info[3] / 1e18
+    miner.price_raw = str(list_miner_info[3])
+    miner.list_time = list_miner_info[4]
     try:
-        miner.balance_human = l_task_functions.get_miner_balance(f"t0{miner.miner_id}")
+        miner.balance_human = l_task_functions.get_miner_balance(f"{settings.ADDRESS_PREFIX}0{miner.miner_id}")
     except Exception as exc:
         logger.warning(f"get balance error: {exc}")
+    try:
+        miner.power_human = l_task_functions.get_miner_power(f"{settings.ADDRESS_PREFIX}0{miner.miner_id}")
+    except Exception as exc:
+        logger.warning(f"get power error: {exc}")
     miner.save()
 
 

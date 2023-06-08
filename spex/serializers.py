@@ -26,6 +26,16 @@ class Order(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class Comment(serializers.ModelSerializer):
+
+    def validate_user(self, value):
+        return value.lower()
+
+    class Meta:
+        model = l_models.Comment
+        fields = "__all__"
+
+
 class ListMinerBuy(serializers.Serializer):
     buyer = serializers.CharField(max_length=42)
 

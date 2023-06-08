@@ -2,28 +2,37 @@ import logging
 import time
 from datetime import datetime
 
+import web3.constants
+
 from . import models as l_models
 from . import serializers as l_serializers
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework import exceptions
+from rest_framework import mixins
+from rest_framework import status
 
 from django.db.transaction import atomic
 from django.conf import settings
 
+from devops_django import decorators as dd_decorators
+
+from web3 import Account
+from eth_account.messages import encode_defunct
+
 from . import tasks as l_tasks
 from .others.filecoin import FilecoinClient
 from .others.keytool import Keytool
+# from .others.spex_contract import SpexContract
 
 from . import filters as l_filters
 from django_filters.rest_framework import DjangoFilterBackend
 
-
 logger = logging.getLogger(__name__)
 
 
-class Miner(viewsets.ModelViewSet):
+class Miner(viewsets.ReadOnlyModelViewSet):
     queryset = l_models.Miner.objects.all()
     serializer_class = l_serializers.Miner
 
@@ -31,8 +40,7 @@ class Miner(viewsets.ModelViewSet):
 
     # filter_class = l_filters.Miner
     filterset_fields = ("owner", "is_list")
-    ordering_fields = ("list_time", )
-
+    ordering_fields = ("list_time",)
 
     @action(methods=["post"], detail=False, url_path="sync-new-miners")
     def c_sync_new_miners(self, request, *args, **kwargs):
@@ -54,7 +62,6 @@ class Miner(viewsets.ModelViewSet):
         # }
         return Response(serializer.data)
 
-    @atomic
     @action(methods=["post"], detail=True, url_path="buy")
     def c_buy(self, request, *args, **kwargs):
         serializer = l_serializers.ListMinerBuy(data=request.data)
@@ -65,7 +72,6 @@ class Miner(viewsets.ModelViewSet):
         serializer = self.get_serializer(miner)
         return Response(serializer.data)
 
-    @atomic
     @action(methods=["post"], detail=True, url_path="list")
     def c_list(self, request, *args, **kwargs):
         serializer = l_serializers.ListMinerArgs(data=request.data)
@@ -77,17 +83,45 @@ class Miner(viewsets.ModelViewSet):
         serializer = self.get_serializer(miner)
         return Response(serializer.data)
 
-    @atomic
     @action(methods=["post"], detail=True, url_path="cancel-list")
     def c_cancel_list(self, request, *args, **kwargs):
         miner = self.get_object()
-        miner.is_list = False
         miner.is_list = False
         miner.price = 0
         miner.save()
         serializer = self.get_serializer(miner)
         return Response(serializer.data)
 
+    @action(methods=["get"], detail=False, url_path="transfer-in-check")
+    @dd_decorators.parameter("miner_id", int)
+    def c_transfer_in_check(self, request, miner_id, *args, **kwargs):
+        res_data = {
+            "in_spex": False,
+            "listed": False
+        }
+        count = l_models.Miner.objects.filter(miner_id=miner_id).count()
+        if count > 0:
+            raise exceptions.ParseError("miner already in SPex")
+        filecoin_client = FilecoinClient(settings.ETH_HTTP_PROVIDER, settings.FILECOIN_API_TOKEN)
+        try:
+            miner_info = filecoin_client.get_miner_info(miner_id)
+        except Exception as exc:
+            raise exceptions.ParseError(f"get miner info error: {str(exc)}")
+        if miner_info["Owner"] != miner_info["Beneficiary"]:
+            raise exceptions.ParseError(f"Beneficiary is not owner")
+
+        if miner_info["PendingBeneficiaryTerm"] is not None:
+            raise exceptions.ParseError(f"Pending beneficiary is not none")
+
+        spex_contract = l_tasks.get_spex_contract()
+        owner = spex_contract.functions.getOwnerById(miner_id).call()
+        if owner != web3.constants.ADDRESS_ZERO:
+            l_tasks.sync_new_miners()
+            res_data["in_spex"] = True
+        # list_miner = spex_contract.functions.getListMinerById(miner_id).call()
+        # if list_miner[0] != 0:
+        #     res_data["listed"] = True
+        return Response(res_data)
 
     # @atomic
     # @action(methods=["post"], detail=False, url_path="test")
@@ -131,16 +165,15 @@ class Order(viewsets.ModelViewSet):
 
 
 class Message(viewsets.GenericViewSet):
-
     permission_classes = []
 
     @action(methods=["post"], detail=False, url_path="build-change-owner-in")
     def c_build_change_owner_in(self, request, *args, **kwargs):
         params_serializer = l_serializers.BuildChangeOwnerIn(data=request.data)
         params_serializer.is_valid(raise_exception=True)
-        filecoin_client = FilecoinClient(settings.ETH_HTTP_PROVIDER)
+        filecoin_client = FilecoinClient(settings.ETH_HTTP_PROVIDER, settings.FILECOIN_API_TOKEN)
         miner_id = params_serializer.validated_data['miner_id']
-        miner_id_str = f"t0{miner_id}"
+        miner_id_str = f"{settings.ADDRESS_PREFIX}0{miner_id}"
         try:
             miner_info = filecoin_client.get_miner_info(miner_id=miner_id)
         except Exception as exc:
@@ -167,7 +200,7 @@ class Message(viewsets.GenericViewSet):
         params_serializer = l_serializers.BuildChangeOwnerOut(data=request.data)
         params_serializer.is_valid(raise_exception=True)
         miner_id = params_serializer.validated_data['miner_id']
-        miner_id_str = f"t0{miner_id}"
+        miner_id_str = f"{settings.ADDRESS_PREFIX}0{miner_id}"
         new_owner_address = params_serializer.validated_data["new_owner_address"]
         keytool = Keytool(settings.KEY_TOOL_PATH)
         try:
@@ -203,7 +236,7 @@ class Message(viewsets.GenericViewSet):
         data = {}
         if params_serializer.validated_data["wait"]:
             cid = params_serializer.validated_data["cid"]
-            filecoin_client = FilecoinClient(settings.ETH_HTTP_PROVIDER)
+            filecoin_client = FilecoinClient(settings.ETH_HTTP_PROVIDER, settings.FILECOIN_API_TOKEN)
             try:
                 filecoin_client.wait_message(cid)
             except Exception as exc:
@@ -215,4 +248,28 @@ class Message(viewsets.GenericViewSet):
     #     pass
 
 
+class Comment(mixins.RetrieveModelMixin,
+              mixins.ListModelMixin,
+              mixins.CreateModelMixin,
+              viewsets.GenericViewSet):
+    queryset = l_models.Comment.objects.all()
+    serializer_class = l_serializers.Comment
 
+    permission_classes = []
+
+    filterset_fields = ["miner", "miner_id", "user"]
+    ordering_fields = ["create_time"]
+
+    @dd_decorators.parameter("sign")
+    def create(self, request, sign, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        signable_message = encode_defunct(text="Sign comment: " + serializer.validated_data["content"])
+        # signable_message = + message
+        recovered_address = Account.recover_message(signable_message, signature=sign)
+
+        if recovered_address.lower() != serializer.validated_data["user"].lower():
+            raise exceptions.ParseError(f"sign error, recovered_address is {recovered_address}")
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)

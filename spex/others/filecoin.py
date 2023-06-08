@@ -1,11 +1,13 @@
 import json
 import requests
+from django.conf import settings
 
 
 class FilecoinClient:
 
-    def __init__(self, base_url: str):
+    def __init__(self, base_url: str, token: str):
         self.base_url = base_url
+        self.token = token
 
     def request(self, method: str, params: list, timeout=30):
         data = {
@@ -15,7 +17,8 @@ class FilecoinClient:
             "id": 1
         }
         headers = {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.token}"
         }
         response = requests.post(self.base_url, data=json.dumps(data), headers=headers, timeout=timeout)
         if response.status_code != 200:
@@ -27,7 +30,7 @@ class FilecoinClient:
 
     def get_miner_info(self, miner_id: int):
         params = [
-            f"t0{miner_id}", None
+            f"{settings.ADDRESS_PREFIX}0{miner_id}", None
         ]
         return self.request(method="Filecoin.StateMinerInfo", params=params)
 
