@@ -32,7 +32,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 logger = logging.getLogger(__name__)
 
 
-class Miner(viewsets.ReadOnlyModelViewSet):
+class Miner(viewsets.ModelViewSet):
     queryset = l_models.Miner.objects.all()
     serializer_class = l_serializers.Miner
 
@@ -114,7 +114,7 @@ class Miner(viewsets.ReadOnlyModelViewSet):
             raise exceptions.ParseError(f"Pending beneficiary is not none")
 
         spex_contract = l_tasks.get_spex_contract()
-        owner = spex_contract.functions.getOwnerById(miner_id).call()
+        owner = spex_contract.functions.getMinerDelegator(miner_id).call()
         if owner != web3.constants.ADDRESS_ZERO:
             l_tasks.sync_new_miners()
             res_data["in_spex"] = True

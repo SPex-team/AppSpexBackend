@@ -1,16 +1,20 @@
 import json
 import logging
 
+import eth_abi
+
 from celery import shared_task
 
 from django.conf import settings
 from django.db import transaction
 from django.db.utils import IntegrityError
 from django.db.transaction import atomic
+
 from .others.spex_contract import SpexContract
 
 from . import models as l_models
 from .others import task_functions as l_task_functions
+from .others import filecoin as o_filecoin
 
 
 logger = logging.getLogger("tasks")
@@ -56,24 +60,63 @@ def add_empty_miner_save_index(miner_id: int, tag: l_models.Tag, index: int):
     tag.save()
 
 
+# @shared_task
+# def sync_new_miners():
+#     spex_contract = get_spex_contract()
+#     miner_id_list = spex_contract.functions.getMinerIdList().call()
+#     last_sync_miner_index_key = "last_sync_miner_index"
+#     tag = l_models.Tag(key=last_sync_miner_index_key, value="-1")
+#     try:
+#         tag = l_models.Tag.objects.get(key=last_sync_miner_index_key)
+#     except l_models.Tag.DoesNotExist:
+#         tag.save()
+#     last_sync_miner_index = int(tag.value) + 1
+#     for index, miner_id in enumerate(miner_id_list[last_sync_miner_index:]):
+#         add_empty_miner_save_index(miner_id, tag, index + last_sync_miner_index)
+
+
 @shared_task
+@atomic
 def sync_new_miners():
-    spex_contract = get_spex_contract()
-    miner_id_list = spex_contract.functions.getMinerIdList().call()
-    last_sync_miner_index_key = "last_sync_miner_index"
-    tag = l_models.Tag(key=last_sync_miner_index_key, value="-1")
+    last_sync_miner_block_number_key = "last_sync_miner_block_number"
+    last_sync_miner_block_number = settings.ETH_INIT_SYNC_HEIGHT - 1
+    tag = None
     try:
-        tag = l_models.Tag.objects.get(key=last_sync_miner_index_key)
+        tag = l_models.Tag.objects.get(key=last_sync_miner_block_number_key)
+        last_sync_miner_block_number = int(tag.value)
     except l_models.Tag.DoesNotExist:
+        tag = l_models.Tag.objects.create(key=last_sync_miner_block_number_key, value=str(last_sync_miner_block_number))
+
+    filecoin_client = o_filecoin.FilecoinClient(settings.ETH_HTTP_PROVIDER, settings.FILECOIN_API_TOKEN)
+    from_block = last_sync_miner_block_number + 1
+    to_block = filecoin_client.get_latest_block_number()
+
+    log_list = filecoin_client.get_logs(from_block, to_block, settings.ETH_CONTRACT_ADDRESS, topics=[settings.SPEX_MINER_IN_CONTRACT_TOPIC])
+    for log in log_list:
+        code = log["data"][2:]
+        encoded_code = bytes.fromhex(code)
+        miner_id, owner = eth_abi.decode(["uint64", "address"], encoded_code)
+        owner = owner.lower()
+        try:
+            l_models.Miner.objects.create(
+                miner_id=miner_id,
+                owner=owner,
+                is_list=False,
+            )
+        except IntegrityError as exc:
+            logger.warning(f"catch IntegrityError when Add miner {miner_id} exc: {exc}")
+        block_number = int(log["blockNumber"], 16)
+        # l_models.Tag.objects.get(key=last_sync_miner_block_number_key, value=str(block_number))
+        tag.value = str(block_number)
         tag.save()
-    last_sync_miner_index = int(tag.value) + 1
-    for index, miner_id in enumerate(miner_id_list[last_sync_miner_index:]):
-        add_empty_miner_save_index(miner_id, tag, index + last_sync_miner_index)
+
+    tag.value = str(to_block)
+    tag.save()
 
 
 def update_miner(miner: l_models.Miner):
     spex_contract = get_spex_contract()
-    owner = spex_contract.functions.getOwnerById(miner.miner_id).call()
+    owner = spex_contract.functions.getMinerDelegator(miner.miner_id).call()
     owner = owner.lower()
     if owner == "0x0000000000000000000000000000000000000000":
         miner.delete()
