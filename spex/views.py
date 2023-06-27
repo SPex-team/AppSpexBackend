@@ -118,9 +118,6 @@ class Miner(viewsets.ModelViewSet):
         if owner != web3.constants.ADDRESS_ZERO:
             l_tasks.sync_new_miners()
             res_data["in_spex"] = True
-        # list_miner = spex_contract.functions.getListMinerById(miner_id).call()
-        # if list_miner[0] != 0:
-        #     res_data["listed"] = True
         return Response(res_data)
 
     # @atomic

@@ -76,7 +76,6 @@ def add_empty_miner_save_index(miner_id: int, tag: l_models.Tag, index: int):
 
 
 @shared_task
-@atomic
 def sync_new_miners():
     last_sync_miner_block_number_key = "last_sync_miner_block_number"
     last_sync_miner_block_number = settings.ETH_INIT_SYNC_HEIGHT - 1
@@ -106,7 +105,6 @@ def sync_new_miners():
         except IntegrityError as exc:
             logger.warning(f"catch IntegrityError when Add miner {miner_id} exc: {exc}")
         block_number = int(log["blockNumber"], 16)
-        # l_models.Tag.objects.get(key=last_sync_miner_block_number_key, value=str(block_number))
         tag.value = str(block_number)
         tag.save()
 
