@@ -18,7 +18,7 @@ class SpexContract:
     #     event_list = event_filter.get_all_entries()
     #     return event_list
 
-    def get_event_miner_in_contract(self, from_block: int, to_block: int | None):
+    def get_event_miner_in_contract(self, from_block: int, to_block):
 
         params = {
             "fromBlock": hex(from_block),
