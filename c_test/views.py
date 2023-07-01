@@ -32,5 +32,7 @@ class TestUser(viewsets.ModelViewSet):
         # send_mail("AAA", "mmm", from_email=settings.EMAIL_HOST_USER, recipient_list=["mingmingtang@aliyun.com"],
         #           html_message=html_message)
         # spex_tasks.update_all_miners()
-        time.sleep(72)
+
+        if settings.ENV == "LOCAL":
+            spex_tasks.update_all_miners()
         return Response({})

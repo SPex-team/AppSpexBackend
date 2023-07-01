@@ -1,3 +1,4 @@
+import datetime
 import json
 import logging
 
@@ -95,6 +96,7 @@ def sync_new_miners():
         code = log["data"][2:]
         encoded_code = bytes.fromhex(code)
         miner_id, owner = eth_abi.decode(["uint64", "address"], encoded_code)
+        logger.info(f"get a new miner miner_id: {miner_id} owner: {owner}")
         owner = owner.lower()
         try:
             l_models.Miner.objects.create(
@@ -103,7 +105,7 @@ def sync_new_miners():
                 is_list=False,
             )
         except IntegrityError as exc:
-            logger.warning(f"catch IntegrityError when Add miner {miner_id} exc: {exc}")
+            logger.info(f"catch IntegrityError when Add miner {miner_id} exc: {exc}")
         block_number = int(log["blockNumber"], 16)
         tag.value = str(block_number)
         tag.save()
@@ -116,7 +118,12 @@ def update_miner(miner: l_models.Miner):
     spex_contract = get_spex_contract()
     owner = spex_contract.functions.getMinerDelegator(miner.miner_id).call()
     owner = owner.lower()
-    if owner == "0x0000000000000000000000000000000000000000":
+
+    now = datetime.datetime.now()
+    interval_time = now.timestamp() - miner.create_time.timestamp()
+
+    if owner == "0x0000000000000000000000000000000000000000" and interval_time > 600:
+        logger.info(f"the miner has been transferred out, delete miner {miner.miner_id}")
         miner.delete()
         return
     miner.owner = owner
@@ -142,12 +149,12 @@ def update_all_miners():
     # sync_height = int(sync_height_str)
     # spex_contract = SpexContract(settings.ETHE_HTTP_PROVIDER, settings.ETH_CONTRACT_ADDRESS, settings.ETH_CONTRACT_ABI_STR)
 
-    miner_qs = l_models.Miner.objects.all()
+    miner_qs = l_models.Miner.objects.filter().all()
     for miner in miner_qs:
         try:
             update_miner(miner)
         except Exception as exc:
-            logger.error(f"Failed sync miner {miner.id}, exc: {exc}")
+            logger.error(f"Failed sync miner {miner.miner_id}, exc: {exc}")
 
 
 @shared_task

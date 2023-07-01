@@ -11,6 +11,9 @@ class Miner(models.Model):
     power_human = models.FloatField(default=0)
     list_time = models.BigIntegerField(default=1675156423)
 
+    create_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)
+
 
 class ListMiner(models.Model):
     miner_id = models.CharField(max_length=20, primary_key=True)

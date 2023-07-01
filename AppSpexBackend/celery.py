@@ -15,10 +15,10 @@ app.autodiscover_tasks()
 app.conf.beat_schedule = {
     'sync_new_miners': {
         'task': 'spex.tasks.sync_new_miners',
-        'schedule': 60
+        'schedule': 60 * 2
     },
     'update_all_miners': {
         'task': 'spex.tasks.update_all_miners',
-        'schedule': 60 * 2
+        'schedule': 60 * 5
     }
 }
