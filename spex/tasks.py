@@ -91,6 +91,7 @@ def sync_new_miners():
     from_block = last_sync_miner_block_number + 1
     to_block = filecoin_client.get_latest_block_number()
 
+    logger.info(f"from_block: {from_block} to_block: {to_block}")
     log_list = filecoin_client.get_logs(from_block, to_block, settings.ETH_CONTRACT_ADDRESS, topics=[settings.SPEX_MINER_IN_CONTRACT_TOPIC])
     for log in log_list:
         code = log["data"][2:]
