@@ -27,24 +27,24 @@ class ExceptionMiddleware:
         return HttpResponse(json.dumps(data), status=500)
 
 
-class RequestLogMiddleware:
-    def __init__(self, get_response):
-        self.get_response = get_response
-
-    def __call__(self, request):
-        response = self.get_response(request)
-        if request.method not in ["POST", "PUT", "PATCH", "DELETE"]:
-            return response
-        if not request.path.startswith("/api/"):
-            return response
-        data = {
-            "request_method": request.method,
-            "request_url": request.path,
-            "request_body": request.body.decode(),
-            "response_status": response.status_code,
-            "response_content": response.content.decode()
-        }
-        log_content = json.dumps(data)
-        request_logger.debug(log_content)
-        return response
+# class RequestLogMiddleware:
+#     def __init__(self, get_response):
+#         self.get_response = get_response
+#
+#     def __call__(self, request):
+#         response = self.get_response(request)
+#         if request.method not in ["POST", "PUT", "PATCH", "DELETE"]:
+#             return response
+#         if not request.path.startswith("/api/"):
+#             return response
+#         data = {
+#             "request_method": request.method,
+#             "request_url": request.path,
+#             "request_body": request.body.decode(),
+#             "response_status": response.status_code,
+#             "response_content": response.content.decode()
+#         }
+#         log_content = json.dumps(data)
+#         request_logger.debug(log_content)
+#         return response
 
