@@ -19,6 +19,7 @@ from django.contrib.staticfiles.views import serve
 from django.urls import re_path
 
 from rest_framework import permissions
+from rest_framework.documentation import include_docs_urls
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
@@ -50,6 +51,8 @@ urlpatterns = [
     re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     re_path(r'^swagger/$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     re_path(r'^redoc/$', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+    path('api-docs', include_docs_urls(title="SPex API", permission_classes=())),
+
     # path('api/v1/alerting/', include("alerting.urls")),
     # path('api/v1/prom/', include("prom.urls")),
     # path('', include('django_prometheus.urls')),

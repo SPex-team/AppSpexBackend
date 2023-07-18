@@ -10,6 +10,7 @@ class Miner(models.Model):
     balance_human = models.FloatField(default=0)
     power_human = models.FloatField(default=0)
     list_time = models.BigIntegerField(default=1675156423)
+    buyer = models.CharField(max_length=42, default="0x0000000000000000000000000000000000000000")
 
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
@@ -23,10 +24,16 @@ class ListMiner(models.Model):
 
 
 class Order(models.Model):
+    miner_id = models.BigIntegerField()
     seller = models.CharField(max_length=42)
     buyer = models.CharField(max_length=42)
-    price = models.IntegerField()
-    time = models.BigIntegerField()
+    price_human = models.FloatField()
+    balance_human = models.FloatField()
+    power_human = models.FloatField()
+    time = models.DateTimeField()
+
+    create_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)
 
 
 class Tag(models.Model):

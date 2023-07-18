@@ -60,22 +60,6 @@ def add_empty_miner_save_index(miner_id: int, tag: l_models.Tag, index: int):
     tag.value = str(index)
     tag.save()
 
-
-# @shared_task
-# def sync_new_miners():
-#     spex_contract = get_spex_contract()
-#     miner_id_list = spex_contract.functions.getMinerIdList().call()
-#     last_sync_miner_index_key = "last_sync_miner_index"
-#     tag = l_models.Tag(key=last_sync_miner_index_key, value="-1")
-#     try:
-#         tag = l_models.Tag.objects.get(key=last_sync_miner_index_key)
-#     except l_models.Tag.DoesNotExist:
-#         tag.save()
-#     last_sync_miner_index = int(tag.value) + 1
-#     for index, miner_id in enumerate(miner_id_list[last_sync_miner_index:]):
-#         add_empty_miner_save_index(miner_id, tag, index + last_sync_miner_index)
-
-
 @shared_task
 def sync_new_miners():
     last_sync_miner_block_number_key = "last_sync_miner_block_number"

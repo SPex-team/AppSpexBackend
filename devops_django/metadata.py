@@ -7,7 +7,6 @@ from collections import OrderedDict
 
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
-from django.utils.encoding import force_text
 
 from rest_framework import exceptions, serializers
 from rest_framework.request import clone_request

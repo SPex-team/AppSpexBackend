@@ -24,23 +24,21 @@ from eth_account.messages import encode_defunct
 from . import tasks as l_tasks
 from .others.filecoin import FilecoinClient
 from .others.keytool import Keytool
-# from .others.spex_contract import SpexContract
 
-from . import filters as l_filters
-from django_filters.rest_framework import DjangoFilterBackend
+from devops_django import mixins as dd_mixins
 
 logger = logging.getLogger(__name__)
 
 
-class Miner(viewsets.ModelViewSet):
+class Miner(dd_mixins.AggregationMixin, viewsets.ModelViewSet):
     queryset = l_models.Miner.objects.all()
     serializer_class = l_serializers.Miner
 
     permission_classes = []
 
-    # filter_class = l_filters.Miner
-    filterset_fields = ("owner", "is_list")
-    ordering_fields = ("list_time",)
+    filterset_fields = ("owner", "is_list", "buyer")
+    ordering_fields = ("list_time", "price", "price_raw", "balance_human", "power_human")
+    search_fields = ("miner_id", )
 
     @action(methods=["post"], detail=False, url_path="sync-new-miners")
     def c_sync_new_miners(self, request, *args, **kwargs):
@@ -154,15 +152,19 @@ class ListMiner(viewsets.ModelViewSet):
         return Response({})
 
 
-class Order(viewsets.ModelViewSet):
+class Order(viewsets.ReadOnlyModelViewSet):
     queryset = l_models.Order.objects.all()
     serializer_class = l_serializers.Order
+
+    filterset_fields = ("seller", "miner_id", "buyer")
+    ordering_fields = ("time", "price_human", "balance_human", "power_human")
 
     permission_classes = []
 
 
 class Message(viewsets.GenericViewSet):
     permission_classes = []
+    serializer_class = l_serializers.BuildChangeOwnerIn
 
     @action(methods=["post"], detail=False, url_path="build-change-owner-in")
     def c_build_change_owner_in(self, request, *args, **kwargs):
@@ -256,6 +258,7 @@ class Comment(mixins.RetrieveModelMixin,
 
     filterset_fields = ["miner", "miner_id", "user"]
     ordering_fields = ["create_time"]
+    search_fields = ("content",)
 
     @dd_decorators.parameter("sign")
     def create(self, request, sign, *args, **kwargs):
