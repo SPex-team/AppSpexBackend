@@ -20,5 +20,9 @@ app.conf.beat_schedule = {
     'update_all_miners': {
         'task': 'spex.tasks.update_all_miners',
         'schedule': 60 * 5
+    },
+    'sync_new_orders': {
+        'task': 'spex.tasks.sync_new_orders',
+        'schedule': 60 * 5
     }
 }

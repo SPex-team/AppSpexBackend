@@ -3,6 +3,7 @@ import json
 import logging
 
 import eth_abi
+import web3.constants
 
 from celery import shared_task
 
@@ -59,6 +60,7 @@ def add_empty_miner_save_index(miner_id: int, tag: l_models.Tag, index: int):
             logger.warning(f"Add miner {miner_id} error: {exc}")
     tag.value = str(index)
     tag.save()
+
 
 @shared_task
 def sync_new_miners():
@@ -142,11 +144,70 @@ def update_all_miners():
             logger.error(f"Failed sync miner {miner.miner_id}, exc: {exc}")
 
 
+# @shared_task
+# def listen_sync_new_miners():
+#     spex_contract = get_spex_contract()
+#     event_filter = spex_contract.events.EventMinerInContract.create_filter(fromBlock="latest")
+#     for event in event_filter.get_new_entries():
+#         pass
+
+
 @shared_task
-def listen_sync_new_miners():
-    spex_contract = get_spex_contract()
-    event_filter = spex_contract.events.EventMinerInContract.create_filter(fromBlock="latest")
-    for event in event_filter.get_new_entries():
-        pass
+def sync_new_orders():
+    last_sync_order_block_number_key = "last_sync_order_block_number"
+    last_sync_order_block_number = settings.ETH_INIT_SYNC_HEIGHT - 1
+    tag = None
+    try:
+        tag = l_models.Tag.objects.get(key=last_sync_order_block_number_key)
+        last_sync_order_block_number = int(tag.value)
+    except l_models.Tag.DoesNotExist:
+        tag = l_models.Tag.objects.create(key=last_sync_order_block_number_key, value=str(last_sync_order_block_number))
 
+    filecoin_client = o_filecoin.FilecoinClient(settings.ETH_HTTP_PROVIDER, settings.FILECOIN_API_TOKEN)
+    from_block = last_sync_order_block_number + 1
+    to_block = filecoin_client.get_latest_block_number()
 
+    logger.info(f"from_block: {from_block} to_block: {to_block}")
+    log_list = filecoin_client.get_logs(from_block, to_block, settings.ETH_CONTRACT_ADDRESS, topics=[settings.SPEX_BUY_MINER_CONTRACT_TOPIC])
+    for log in log_list:
+        code = log["data"][2:]
+        encoded_code = bytes.fromhex(code)
+        miner_id, buyer, price = eth_abi.decode(["uint64", "address", "uint256"], encoded_code)
+        logger.info(f"get a new miner miner_id: {miner_id} buyer: {buyer} price: {price}")
+        buyer = buyer.lower()
+        price_human = price / 1e18
+        try:
+            order = l_models.Order.objects.create(
+                transaction_hash=log["transactionHash"],
+                miner_id=miner_id,
+                seller=web3.constants.ADDRESS_ZERO,
+                buyer=buyer,
+                price_human=price_human,
+            )
+        except IntegrityError as exc:
+            logger.info(f"catch IntegrityError when Add miner {miner_id} exc: {exc}")
+        else:
+            try:
+                order.balance_human = l_task_functions.get_miner_balance(f"{settings.ADDRESS_PREFIX}0{miner_id}")
+            except Exception as exc:
+                logger.warning(f"get balance error: {exc}")
+            try:
+                order.power_human = l_task_functions.get_miner_power(f"{settings.ADDRESS_PREFIX}0{miner_id}")
+            except Exception as exc:
+                logger.warning(f"get power error: {exc}")
+            time = datetime.datetime.now()
+            try:
+                timestamp_hex = filecoin_client.request(method="eth_getBlockByNumber", params=[log["blockNumber"]])
+                timestamp = int(timestamp_hex, 16)
+                time = datetime.datetime.fromtimestamp(timestamp)
+            except Exception as exc:
+                logger.warning(f"get block timestamp error: {exc}")
+            order.time = time
+            order.save()
+
+        block_number = int(log["blockNumber"], 16)
+        tag.value = str(block_number)
+        tag.save()
+
+    tag.value = str(to_block)
+    tag.save()

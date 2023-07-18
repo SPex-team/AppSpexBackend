@@ -22,7 +22,7 @@ class TestUser(viewsets.ModelViewSet):
         #           html_message=html_message)
 
         if settings.ENV == "LOCAL":
-            spex_tasks.sync_new_miners()
+            spex_tasks.sync_new_orders()
 
         time.sleep(72)
         return Response({})

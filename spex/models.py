@@ -24,13 +24,14 @@ class ListMiner(models.Model):
 
 
 class Order(models.Model):
+    transaction_hash = models.CharField(max_length=66, unique=True)
     miner_id = models.BigIntegerField()
     seller = models.CharField(max_length=42)
     buyer = models.CharField(max_length=42)
     price_human = models.FloatField()
-    balance_human = models.FloatField()
-    power_human = models.FloatField()
-    time = models.DateTimeField()
+    balance_human = models.FloatField(default=0)
+    power_human = models.FloatField(default=0)
+    time = models.DateTimeField(auto_now_add=True)
 
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
