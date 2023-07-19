@@ -21,6 +21,7 @@ from devops_django import decorators as dd_decorators
 from web3 import Account
 from eth_account.messages import encode_defunct
 
+from . import filters as l_filters
 from . import tasks as l_tasks
 from .others.filecoin import FilecoinClient
 from .others.keytool import Keytool
@@ -156,7 +157,8 @@ class Order(viewsets.ReadOnlyModelViewSet):
     queryset = l_models.Order.objects.all()
     serializer_class = l_serializers.Order
 
-    filterset_fields = ("seller", "miner_id", "buyer")
+    filterset_class = l_filters.Order
+    # filterset_fields = ("seller", "miner_id", "buyer")
     ordering_fields = ("time", "price_human", "balance_human", "power_human")
 
     permission_classes = []

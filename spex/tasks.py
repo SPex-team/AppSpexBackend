@@ -4,6 +4,7 @@ import logging
 
 import eth_abi
 import web3.constants
+import traceback
 
 from celery import shared_task
 
@@ -106,16 +107,32 @@ def update_miner(miner: l_models.Miner):
     owner = spex_contract.functions.getMinerDelegator(miner.miner_id).call()
     owner = owner.lower()
 
+    transfer_out_delegator = spex_contract.functions.getTransferOutMinerDelegator(miner.miner_id).call()
+    transfer_out_delegator = transfer_out_delegator.lower()
+
     now = datetime.datetime.now()
     interval_time = now.timestamp() - miner.create_time.timestamp()
 
     if owner == "0x0000000000000000000000000000000000000000" and interval_time > 600:
-        logger.info(f"the miner has been transferred out, delete miner {miner.miner_id}")
-        miner.delete()
+
+        if transfer_out_delegator == "0x0000000000000000000000000000000000000000":
+            logger.info(f"the miner not in delegator and transfer_out_delegator, delete miner {miner.miner_id}")
+            miner.delete()
+            return
+
+        filecoin_client = o_filecoin.FilecoinClient(settings.ETH_HTTP_PROVIDER, settings.FILECOIN_API_TOKEN)
+        miner_info = filecoin_client.get_miner_info(miner.miner_id)
+        if miner_info["Owner"] != settings.SPEX_CONTRACT_T0_ADDRESS:
+            logger.info(f"the miner has been transferred out, delete miner {miner.miner_id}")
+            miner.delete()
+        else:
+            miner.is_submitted_transfer_out = True
+            miner.save()
         return
     miner.owner = owner
     list_miner_info = spex_contract.functions.getListMinerById(miner.miner_id).call()
     miner.is_list = False if list_miner_info[0] == 0 else True
+    miner.buyer = list_miner_info[2]
     miner.price = list_miner_info[3] / 1e18
     miner.price_raw = str(list_miner_info[3])
     miner.list_time = list_miner_info[4]

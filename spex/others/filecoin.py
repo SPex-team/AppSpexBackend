@@ -18,8 +18,9 @@ class FilecoinClient:
         }
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.token}"
         }
+        if self.token:
+            headers["Authorization"] = f"Bearer {self.token}"
         response = requests.post(self.base_url, data=json.dumps(data), headers=headers, timeout=timeout)
         if response.status_code != 200:
             raise Exception(f"request {self.base_url} error, status_code: {response.status_code} body: {response.text}")
@@ -53,4 +54,8 @@ class FilecoinClient:
         if topics:
             args["topics"] = topics
         return self.request(method="eth_getLogs", params=[args], timeout=60)
+
+    # def get_miner_info(self, miner_id):
+    #     result = self.request(method="Filecoin.StateMinerInfo", params=[miner_id, None], timeout=60)
+    #     return result
 

@@ -11,6 +11,7 @@ class Miner(models.Model):
     power_human = models.FloatField(default=0)
     list_time = models.BigIntegerField(default=1675156423)
     buyer = models.CharField(max_length=42, default="0x0000000000000000000000000000000000000000")
+    is_submitted_transfer_out = models.BooleanField(default=False)
 
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
