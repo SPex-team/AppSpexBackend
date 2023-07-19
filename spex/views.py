@@ -159,7 +159,7 @@ class Order(viewsets.ReadOnlyModelViewSet):
 
     filterset_class = l_filters.Order
     # filterset_fields = ("seller", "miner_id", "buyer")
-    ordering_fields = ("time", "price_human", "balance_human", "power_human")
+    ordering_fields = ("time", "price_human", "balance_human", "power_human", "create_time")
 
     permission_classes = []
 
