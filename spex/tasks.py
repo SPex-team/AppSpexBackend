@@ -122,7 +122,7 @@ def update_miner(miner: l_models.Miner):
 
         filecoin_client = o_filecoin.FilecoinClient(settings.ETH_HTTP_PROVIDER, settings.FILECOIN_API_TOKEN)
         miner_info = filecoin_client.get_miner_info(miner.miner_id)
-        if miner_info["Owner"] != settings.SPEX_CONTRACT_T0_ADDRESS:
+        if miner_info["Owner"][1:] != settings.SPEX_CONTRACT_T0_ADDRESS[1:]:
             logger.info(f"the miner has been transferred out, delete miner {miner.miner_id}")
             miner.delete()
         else:
@@ -144,6 +144,8 @@ def update_miner(miner: l_models.Miner):
         miner.power_human = l_task_functions.get_miner_power(f"{settings.ADDRESS_PREFIX}0{miner.miner_id}")
     except Exception as exc:
         logger.warning(f"get power error: {exc}")
+
+
     miner.save()
 
 
@@ -192,7 +194,7 @@ def sync_new_orders():
         miner_id, buyer, price = eth_abi.decode(["uint64", "address", "uint256"], encoded_code)
         logger.info(f"get a new miner miner_id: {miner_id} buyer: {buyer} price: {price}")
         buyer = buyer.lower()
-        price_human = price / 1e18
+        price_human = l_task_functions.get_miner_price_human(miner_id)
         try:
             order = l_models.Order.objects.create(
                 transaction_hash=log["transactionHash"],

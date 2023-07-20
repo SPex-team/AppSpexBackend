@@ -1,6 +1,7 @@
 from django.conf import settings
 
 from ..others.filecoin import FilecoinClient
+from .. import models as l_models
 
 
 def get_miner_balance(miner_id: str):
@@ -24,3 +25,11 @@ def get_miner_power(miner_id: str):
     power_t = round(int(ret_data["MinerPower"]["QualityAdjPower"]) / (1024 ** 4), 2)
     return power_t
 
+
+def get_miner_price_human(miner_id: int):
+    price_human = 0
+    try:
+        price_human = l_models.MinerPrice.objects.get(miner_id=miner_id).price_human
+    except l_models.MinerPrice.DoesNotExist:
+        pass
+    return price_human
