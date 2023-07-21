@@ -41,6 +41,16 @@ class Miner(dd_mixins.AggregationMixin, viewsets.ModelViewSet):
     ordering_fields = ("list_time", "price", "price_raw", "balance_human", "power_human")
     search_fields = ("miner_id", )
 
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+        validated_data = serializer.validated_data
+        try:
+            miner_price = l_models.MinerPrice.objects.get(miner_id=validated_data["miner_id"])
+            miner_price.price_human = validated_data["price"]
+            miner_price.save()
+        except l_models.MinerPrice.DoesNotExist:
+            l_models.MinerPrice.objects.create(miner_id=validated_data["miner_id"], price_human=validated_data["price"])
+
     @action(methods=["post"], detail=False, url_path="sync-new-miners")
     def c_sync_new_miners(self, request, *args, **kwargs):
         l_tasks.sync_new_miners()

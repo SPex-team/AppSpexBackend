@@ -16,16 +16,16 @@ class Miner(models.Model):
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
 
-    def save(self, *args, **kwargs):
-        try:
-            miner_price = MinerPrice.objects.get(miner_id=self.miner_id)
-        except MinerPrice.DoesNotExist:
-            MinerPrice.objects.create(miner_id=self.miner_id, price_human=self.price)
-        else:
-            miner_price.price_human = self.price
-            miner_price.save()
-        # MinerPrice.objects.get_or_create(miner_id=self.miner_id, price_human=self.price)
-        super().save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     try:
+    #         miner_price = MinerPrice.objects.get(miner_id=self.miner_id)
+    #     except MinerPrice.DoesNotExist:
+    #         MinerPrice.objects.create(miner_id=self.miner_id, price_human=self.price)
+    #     else:
+    #         miner_price.price_human = self.price
+    #         miner_price.save()
+    #     # MinerPrice.objects.get_or_create(miner_id=self.miner_id, price_human=self.price)
+    #     super().save(*args, **kwargs)
 
 
 class ListMiner(models.Model):
