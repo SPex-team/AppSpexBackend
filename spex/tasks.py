@@ -144,12 +144,15 @@ def update_miner(miner: l_models.Miner):
         miner.power_human = l_task_functions.get_miner_power(f"{settings.ADDRESS_PREFIX}0{miner.miner_id}")
     except Exception as exc:
         logger.warning(f"get power error: {exc}")
-    try:
-        miner_price = l_models.MinerPrice.objects.get(miner_id=miner.miner_id)
-        miner_price.price_human = miner.price
-        miner_price.save()
-    except l_models.MinerPrice.DoesNotExist:
-        l_models.MinerPrice.objects.create(miner_id=miner.miner_id, price_human=miner.price)
+
+    if miner.is_list:
+        try:
+            miner_price = l_models.MinerPrice.objects.get(miner_id=miner.miner_id)
+            miner_price.price_human = miner.price
+            miner_price.save()
+        except l_models.MinerPrice.DoesNotExist:
+            l_models.MinerPrice.objects.create(miner_id=miner.miner_id, price_human=miner.price)
+            
     miner.save()
 
 

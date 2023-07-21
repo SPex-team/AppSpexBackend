@@ -66,3 +66,12 @@ class Comment(models.Model):
 class MinerPrice(models.Model):
     miner_id = models.IntegerField(unique=True)
     price_human = models.FloatField()
+
+
+class MinerLastInfo:
+    miner_id = models.IntegerField(unique=True)
+    price_human = models.FloatField()
+    seller = models.CharField(max_length=42)
+    buyer = models.CharField(max_length=42)
+    balance_human = models.FloatField()
+    power_human = models.FloatField()
