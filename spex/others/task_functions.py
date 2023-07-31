@@ -1,3 +1,6 @@
+
+import web3
+
 from django.conf import settings
 
 from ..others.filecoin import FilecoinClient
@@ -29,7 +32,18 @@ def get_miner_power(miner_id: str):
 def get_miner_price_human(miner_id: int):
     price_human = 0
     try:
-        price_human = l_models.MinerPrice.objects.get(miner_id=miner_id).price_human
-    except l_models.MinerPrice.DoesNotExist:
+        miner_last_info = l_models.MinerLastInfo.objects.get(miner_id=miner_id)
+        price_human = miner_last_info.price_human
+    except l_models.MinerLastInfo.DoesNotExist:
         pass
     return price_human
+
+
+def get_miner_seller(miner_id: int):
+    seller = web3.constants.ADDRESS_ZERO
+    try:
+        miner_last_info = l_models.MinerLastInfo.objects.get(miner_id=miner_id).price_human
+        seller = miner_last_info.owner
+    except l_models.MinerLastInfo.DoesNotExist:
+        pass
+    return seller

@@ -25,6 +25,7 @@ from . import filters as l_filters
 from . import tasks as l_tasks
 from .others.filecoin import FilecoinClient
 from .others.keytool import Keytool
+from .others import objects as o_objects
 
 from devops_django import mixins as dd_mixins
 
@@ -44,12 +45,13 @@ class Miner(dd_mixins.AggregationMixin, viewsets.ModelViewSet):
     def perform_create(self, serializer):
         super().perform_create(serializer)
         validated_data = serializer.validated_data
-        try:
-            miner_price = l_models.MinerPrice.objects.get(miner_id=validated_data["miner_id"])
-            miner_price.price_human = validated_data["price"]
-            miner_price.save()
-        except l_models.MinerPrice.DoesNotExist:
-            l_models.MinerPrice.objects.create(miner_id=validated_data["miner_id"], price_human=validated_data["price"])
+        # try:
+        #     miner_price = l_models.MinerPrice.objects.get(miner_id=validated_data["miner_id"])
+        #     miner_price.price_human = validated_data["price"]
+        #     miner_price.save()
+        # except l_models.MinerPrice.DoesNotExist:
+        #     l_models.MinerPrice.objects.create(miner_id=validated_data["miner_id"], price_human=validated_data["price"])
+        o_objects.MinerLastInfo.update_from_miner(serializer.instance)
 
     @action(methods=["post"], detail=False, url_path="sync-new-miners")
     def c_sync_new_miners(self, request, *args, **kwargs):
@@ -262,6 +264,7 @@ class Message(viewsets.GenericViewSet):
 class Comment(mixins.RetrieveModelMixin,
               mixins.ListModelMixin,
               mixins.CreateModelMixin,
+              mixins.DestroyModelMixin,
               viewsets.GenericViewSet):
     queryset = l_models.Comment.objects.all()
     serializer_class = l_serializers.Comment
@@ -271,6 +274,26 @@ class Comment(mixins.RetrieveModelMixin,
     filterset_fields = ["miner", "miner_id", "user"]
     ordering_fields = ["create_time"]
     search_fields = ("content",)
+
+    def update_number_comments(self, miner):
+        number_comments = l_models.Comment.objects.filter(miner_id=miner.miner_id).count()
+        miner.number_comments = number_comments
+        miner.save()
+
+    @atomic
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+        miner = serializer.validated_data["miner"]
+        self.update_number_comments(miner)
+        # # number_comments = l_models.Comment.objects.filter(miner_id=miner.id).count()
+        # # miner.number_comments = number_comments
+        # # miner.save()
+
+    @atomic
+    def perform_destroy(self, instance):
+        miner = instance.miner
+        super().perform_destroy(instance)
+        self.update_number_comments(miner)
 
     @dd_decorators.parameter("sign")
     def create(self, request, sign, *args, **kwargs):
@@ -285,3 +308,15 @@ class Comment(mixins.RetrieveModelMixin,
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    @dd_decorators.parameter("sign")
+    def destroy(self, request, sign, *args, **kwargs):
+        instance = self.get_object()
+        sign_txt = "Delete comment: " + instance.content
+        signable_message = encode_defunct(text=sign_txt)
+        # signable_message = + message
+        recovered_address = Account.recover_message(signable_message, signature=sign)
+        if recovered_address.lower() != instance.user.lower():
+            raise exceptions.ParseError(f"sign error, recovered_address is {recovered_address}")
+        return super().destroy(request, *args, **kwargs)
+

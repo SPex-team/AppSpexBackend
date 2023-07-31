@@ -18,6 +18,7 @@ from .others.spex_contract import SpexContract
 from . import models as l_models
 from .others import task_functions as l_task_functions
 from .others import filecoin as o_filecoin
+from .others import objects as o_objects
 
 
 logger = logging.getLogger("tasks")
@@ -146,13 +147,13 @@ def update_miner(miner: l_models.Miner):
         logger.warning(f"get power error: {exc}")
 
     if miner.is_list:
-        try:
-            miner_price = l_models.MinerPrice.objects.get(miner_id=miner.miner_id)
-            miner_price.price_human = miner.price
-            miner_price.save()
-        except l_models.MinerPrice.DoesNotExist:
-            l_models.MinerPrice.objects.create(miner_id=miner.miner_id, price_human=miner.price)
-            
+        # try:
+        #     miner_price = l_models.MinerPrice.objects.get(miner_id=miner.miner_id)
+        #     miner_price.price_human = miner.price
+        #     miner_price.save()
+        # except l_models.MinerPrice.DoesNotExist:
+        #     l_models.MinerPrice.objects.create(miner_id=miner.miner_id, price_human=miner.price)
+        o_objects.MinerLastInfo.update_from_miner(miner)
     miner.save()
 
 
@@ -201,26 +202,36 @@ def sync_new_orders():
         miner_id, buyer, price = eth_abi.decode(["uint64", "address", "uint256"], encoded_code)
         logger.info(f"get a new miner miner_id: {miner_id} buyer: {buyer} price: {price}")
         buyer = buyer.lower()
-        price_human = l_task_functions.get_miner_price_human(miner_id)
+        # price_human = l_task_functions.get_miner_price_human(miner_id)
+
         try:
             order = l_models.Order.objects.create(
                 transaction_hash=log["transactionHash"],
                 miner_id=miner_id,
                 seller=web3.constants.ADDRESS_ZERO,
                 buyer=buyer,
-                price_human=price_human,
+                price_human=0,
             )
         except IntegrityError as exc:
             logger.info(f"catch IntegrityError when Add miner {miner_id} exc: {exc}")
         else:
             try:
-                order.balance_human = l_task_functions.get_miner_balance(f"{settings.ADDRESS_PREFIX}0{miner_id}")
-            except Exception as exc:
-                logger.warning(f"get balance error: {exc}")
-            try:
-                order.power_human = l_task_functions.get_miner_power(f"{settings.ADDRESS_PREFIX}0{miner_id}")
-            except Exception as exc:
-                logger.warning(f"get power error: {exc}")
+                miner_last_info = l_models.MinerLastInfo.objects.get(miner_id=miner_id)
+                price_human = miner_last_info.price_human
+                order.seller = miner_last_info.owner
+                order.price_human = miner_last_info.price_human
+                order.power_human = miner_last_info.power_human
+            except l_models.MinerLastInfo.DoesNotExist:
+                pass
+
+            # try:
+            #     order.balance_human = l_task_functions.get_miner_balance(f"{settings.ADDRESS_PREFIX}0{miner_id}")
+            # except Exception as exc:
+            #     logger.warning(f"get balance error: {exc}")
+            # try:
+            #     order.power_human = l_task_functions.get_miner_power(f"{settings.ADDRESS_PREFIX}0{miner_id}")
+            # except Exception as exc:
+            #     logger.warning(f"get power error: {exc}")
             time = datetime.datetime.now()
             try:
                 timestamp_hex = filecoin_client.request(method="eth_getBlockByNumber", params=[log["blockNumber"]])

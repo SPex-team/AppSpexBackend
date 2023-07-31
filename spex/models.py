@@ -12,6 +12,7 @@ class Miner(models.Model):
     list_time = models.BigIntegerField(default=1675156423, db_index=True)
     buyer = models.CharField(max_length=42, default="0x0000000000000000000000000000000000000000")
     is_submitted_transfer_out = models.BooleanField(default=False)
+    number_comments = models.IntegerField(default=0)
 
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
@@ -68,10 +69,13 @@ class MinerPrice(models.Model):
     price_human = models.FloatField()
 
 
-class MinerLastInfo:
+class MinerLastInfo(models.Model):
     miner_id = models.IntegerField(unique=True)
     price_human = models.FloatField()
-    seller = models.CharField(max_length=42)
+    owner = models.CharField(max_length=42)
     buyer = models.CharField(max_length=42)
     balance_human = models.FloatField()
     power_human = models.FloatField()
+
+    create_time = models.DateTimeField(auto_now_add=True, db_index=True)
+    update_time = models.DateTimeField(auto_now=True)
