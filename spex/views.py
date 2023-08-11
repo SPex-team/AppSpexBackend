@@ -232,6 +232,7 @@ class Message(viewsets.GenericViewSet):
 
     @action(methods=["post"], detail=False, url_path="push")
     def c_push_message(self, request, *args, **kwargs):
+        logger.debug(f"request.data: {request.data}")
         params_serializer = l_serializers.PushMessage(data=request.data)
         params_serializer.is_valid(raise_exception=True)
         keytool = Keytool(settings.KEY_TOOL_PATH)

@@ -38,3 +38,10 @@ class MinerPrice(admin.ModelAdmin):
     list_display = dd_models.get_all_field_name(l_models.MinerPrice)
     list_display_links = ("id",)
     list_per_page = 10
+
+
+@admin.register(l_models.MinerLastInfo)
+class MinerLastInfo(admin.ModelAdmin):
+    list_display = dd_models.get_all_field_name(l_models.MinerLastInfo)
+    list_display_links = ("id", "miner_id")
+    list_per_page = 10
