@@ -44,9 +44,10 @@ def return_static(request, path, insecure=True, **kwargs):
 
 urlpatterns = [
     re_path(r'^static/(?P<path>.*)$', return_static, name='static'),
-    path('admin/', admin.site.urls),
+    path('api/v1/spex/', include('loan.urls')),
     path('api/v1/spex/', include('spex.urls')),
     path('api/v1/test/', include('c_test.urls')),
+    path('admin/', admin.site.urls),
     path('', include('django_prometheus.urls')),
     re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     re_path(r'^swagger/$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
