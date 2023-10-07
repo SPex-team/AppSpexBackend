@@ -44,7 +44,7 @@ def return_static(request, path, insecure=True, **kwargs):
 
 urlpatterns = [
     re_path(r'^static/(?P<path>.*)$', return_static, name='static'),
-    path('api/v1/spex/', include('loan.urls')),
+    path('api/v1/loan/', include('loan.urls')),
     path('api/v1/spex/', include('spex.urls')),
     path('api/v1/test/', include('c_test.urls')),
     path('admin/', admin.site.urls),
