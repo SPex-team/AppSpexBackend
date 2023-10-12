@@ -194,8 +194,8 @@ class Message(viewsets.GenericViewSet):
             raise exceptions.ParseError(f"get miner info error: {exc}")
         keytool = Keytool(settings.KEY_TOOL_PATH)
         try:
-            msg_cid_hex, msg_cid_str, msg_hex, msg_detail = keytool.build_message(miner_info["Owner"], miner_id_str,
-                                                                                  f'"{settings.SPEX_CONTRACT_T0_ADDRESS}"')
+            msg_cid_hex, msg_cid_str, msg_hex, msg_detail = keytool.build_change_owner_message(miner_info["Owner"], miner_id_str,
+                                                                                  f'"{settings.SPEX_LOAN_CONTRACT_T0_ADDRESS}"')
         except Exception as exc:
             logger.debug(f"Build miner {miner_id} message error: {exc}")
             raise exceptions.ParseError(f"Build message error: {exc}")
@@ -217,7 +217,7 @@ class Message(viewsets.GenericViewSet):
         new_owner_address = params_serializer.validated_data["new_owner_address"]
         keytool = Keytool(settings.KEY_TOOL_PATH)
         try:
-            msg_cid_hex, msg_cid_str, msg_hex, msg_detail = keytool.build_message(new_owner_address, miner_id_str,
+            msg_cid_hex, msg_cid_str, msg_hex, msg_detail = keytool.build_change_owner_message(new_owner_address, miner_id_str,
                                                                                   f'"{new_owner_address}"')
         except Exception as exc:
             logger.debug(f"Build miner {miner_id} message error: {exc}")
@@ -256,6 +256,36 @@ class Message(viewsets.GenericViewSet):
             except Exception as exc:
                 logger.debug(f"wait message error, cid: {cid} exc: {exc}")
         return Response(data)
+
+    @action(methods=["post"], detail=False, url_path="build-change-beneficiary-in")
+    def c_build_change_beneficiary_in(self, request, *args, **kwargs):
+        params_serializer = l_serializers.BuildChangeBeneficiaryIn(data=request.data)
+        params_serializer.is_valid(raise_exception=True)
+        filecoin_client = FilecoinClient(settings.ETH_HTTP_PROVIDER, settings.FILECOIN_API_TOKEN)
+        miner_id = params_serializer.validated_data['miner_id']
+        miner_id_str = f"{settings.ADDRESS_PREFIX}0{miner_id}"
+        try:
+            miner_info = filecoin_client.get_miner_info(miner_id=miner_id)
+        except Exception as exc:
+            logger.debug(f"get miner {miner_id} info error: {exc}")
+            raise exceptions.ParseError(f"get miner info error: {exc}")
+        keytool = Keytool(settings.KEY_TOOL_PATH)
+        try:
+            msg_cid_hex, msg_cid_str, msg_hex, msg_detail = keytool.build_change_owner_message(miner_info["Beneficiary"],
+                                                                                               miner_id_str,
+                                                                                               f'"{settings.SPEX_CONTRACT_T0_ADDRESS}"')
+        except Exception as exc:
+            logger.debug(f"Build miner {miner_id} message error: {exc}")
+            raise exceptions.ParseError(f"Build message error: {exc}")
+        data = {
+            "msg_cid_hex": msg_cid_hex,
+            "msg_cid_str": msg_cid_str,
+            "msg_hex": msg_hex,
+            "msg_detail": msg_detail,
+            "miner_info": miner_info
+        }
+        return Response(data)
+
 
     # @action(methods=["post"], detail=False, url_path="push-wait")
     # def c_push_wait_message(self, request, *args, **kwargs):

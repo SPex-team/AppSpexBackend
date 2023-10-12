@@ -48,6 +48,10 @@ class BuildChangeOwnerIn(serializers.Serializer):
     miner_id = serializers.IntegerField()
 
 
+class BuildChangeBeneficiaryIn(serializers.Serializer):
+    miner_id = serializers.IntegerField()
+
+
 class BuildChangeOwnerOut(serializers.Serializer):
     miner_id = serializers.IntegerField()
     new_owner_address = serializers.CharField()

@@ -40,8 +40,17 @@ class Keytool:
             raise Exception(err_msg)
         return cp.stdout
 
-    def build_message(self, _from: str, to: str, args: str):
+    def build_change_owner_message(self, _from: str, to: str, args: str):
         cmd = f"./keytool message build --from {_from} -t {to} --method 23 --args='{args}'"
+        stdout = self.run_cmd(cmd)
+        msg_cid_hex = stdout.split("msgCidHex__")[1].split("__msgCidHex")[0]
+        msg_cid_str = stdout.split("msgCidStr__")[1].split("__msgCidStr")[0]
+        msg_hex = stdout.split("msgHex__")[1].split("__msgHex")[0]
+        msg_detail = stdout.split("|detail:")[1].split("|build message success")[0]
+        return msg_cid_hex, msg_cid_str, msg_hex, msg_detail
+
+    def build_message(self, _from: str, to: str, method: int, args: str):
+        cmd = f"./keytool message build --from {_from} -t {to} --method {method} --args='{args}'"
         stdout = self.run_cmd(cmd)
         msg_cid_hex = stdout.split("msgCidHex__")[1].split("__msgCidHex")[0]
         msg_cid_str = stdout.split("msgCidStr__")[1].split("__msgCidStr")[0]
@@ -56,3 +65,14 @@ class Keytool:
         if result is None:
             raise Exception(f"Failed push: {stdout}")
         return stdout
+
+    def build_change_beneficiary_message(self, _from: str, miner_id: str, new_beneficiary: str, new_quota: int,
+                                         new_expiration: int):
+        args = {
+            "NewBeneficiary": new_beneficiary,
+            "NewQuota": new_quota,
+            "NewExpiration": new_expiration
+        }
+
+        args_str = json.dumps(args)
+        return self.build_message(_from, miner_id, 30, args_str)

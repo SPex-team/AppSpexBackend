@@ -43,6 +43,8 @@ class Loan(models.Model):
     last_amount_human = models.FloatField(default=0)
     last_update_timestamp = models.BigIntegerField(default=1675156423)
 
+    transaction_hash = models.CharField(max_length=66)
+
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
 
@@ -65,3 +67,12 @@ class SellItem(models.Model):
 class Tag(models.Model):
     key = models.CharField(max_length=50, unique=True)
     value = models.CharField(max_length=100)
+
+
+class Comment(models.Model):
+    user = models.CharField(max_length=42)
+    miner = models.ForeignKey(Miner, on_delete=models.CASCADE, db_index=True)
+    content = models.TextField(max_length=100)
+
+    create_time = models.DateTimeField(auto_now_add=True, db_index=True)
+    update_time = models.DateTimeField(auto_now=True)
