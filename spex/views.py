@@ -40,7 +40,7 @@ class Miner(dd_mixins.AggregationMixin, viewsets.ModelViewSet):
 
     filterset_fields = ("owner", "is_list", "buyer")
     ordering_fields = ("list_time", "price", "price_raw", "balance_human", "power_human")
-    search_fields = ("miner_id", )
+    search_fields = ("miner_id",)
 
     def perform_create(self, serializer):
         super().perform_create(serializer)
@@ -194,8 +194,9 @@ class Message(viewsets.GenericViewSet):
             raise exceptions.ParseError(f"get miner info error: {exc}")
         keytool = Keytool(settings.KEY_TOOL_PATH)
         try:
-            msg_cid_hex, msg_cid_str, msg_hex, msg_detail = keytool.build_change_owner_message(miner_info["Owner"], miner_id_str,
-                                                                                  f'"{settings.SPEX_LOAN_CONTRACT_T0_ADDRESS}"')
+            msg_cid_hex, msg_cid_str, msg_hex, msg_detail = keytool.build_change_owner_message(miner_info["Owner"],
+                                                                                               miner_id_str,
+                                                                                               f'"{settings.SPEX_LOAN_CONTRACT_T0_ADDRESS}"')
         except Exception as exc:
             logger.debug(f"Build miner {miner_id} message error: {exc}")
             raise exceptions.ParseError(f"Build message error: {exc}")
@@ -217,8 +218,9 @@ class Message(viewsets.GenericViewSet):
         new_owner_address = params_serializer.validated_data["new_owner_address"]
         keytool = Keytool(settings.KEY_TOOL_PATH)
         try:
-            msg_cid_hex, msg_cid_str, msg_hex, msg_detail = keytool.build_change_owner_message(new_owner_address, miner_id_str,
-                                                                                  f'"{new_owner_address}"')
+            msg_cid_hex, msg_cid_str, msg_hex, msg_detail = keytool.build_change_owner_message(new_owner_address,
+                                                                                               miner_id_str,
+                                                                                               f'"{new_owner_address}"')
         except Exception as exc:
             logger.debug(f"Build miner {miner_id} message error: {exc}")
             raise exceptions.ParseError(f"Build message error: {exc}")
@@ -271,11 +273,14 @@ class Message(viewsets.GenericViewSet):
             raise exceptions.ParseError(f"get miner info error: {exc}")
         keytool = Keytool(settings.KEY_TOOL_PATH)
         try:
-            msg_cid_hex, msg_cid_str, msg_hex, msg_detail = keytool.build_change_owner_message(miner_info["Beneficiary"],
-                                                                                               miner_id_str,
-                                                                                               f'"{settings.SPEX_CONTRACT_T0_ADDRESS}"')
+            msg_cid_hex, msg_cid_str, msg_hex, msg_detail = keytool.build_change_beneficiary_message(
+                miner_info["Beneficiary"],
+                miner_id_str,
+                f"{settings.SPEX_LOAN_CONTRACT_T0_ADDRESS}",
+                "99999999999999999999999999999999999999999999999999000000000000000000",
+                9223372036854775807)
         except Exception as exc:
-            logger.debug(f"Build miner {miner_id} message error: {exc}")
+            logger.debug(f"Build change beneficiary message error: miner_id: {miner_id} exc: {exc}")
             raise exceptions.ParseError(f"Build message error: {exc}")
         data = {
             "msg_cid_hex": msg_cid_hex,
@@ -285,7 +290,6 @@ class Message(viewsets.GenericViewSet):
             "miner_info": miner_info
         }
         return Response(data)
-
 
     # @action(methods=["post"], detail=False, url_path="push-wait")
     # def c_push_wait_message(self, request, *args, **kwargs):
@@ -350,4 +354,3 @@ class Comment(mixins.RetrieveModelMixin,
         if recovered_address.lower() != instance.user.lower():
             raise exceptions.ParseError(f"sign error, recovered_address is {recovered_address}")
         return super().destroy(request, *args, **kwargs)
-
