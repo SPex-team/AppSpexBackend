@@ -24,5 +24,21 @@ app.conf.beat_schedule = {
     'sync_new_orders': {
         'task': 'spex.tasks.sync_new_orders',
         'schedule': 60 * 5
-    }
+    },
+    'sync_loan_new_miners': {
+        'task': 'loan.tasks.sync_new_miners',
+        'schedule': 60 * 2
+    },
+    'update_loan_all_miners': {
+        'task': 'loan.tasks.update_all_miners',
+        'schedule': 60 * 5
+    },
+    'sync_loan_new_loans': {
+        'task': 'spex.tasks.sync_new_loans',
+        'schedule': 60 * 2
+    },
+    'update_loan_all_loans': {
+        'task': 'spex.tasks.update_all_loans',
+        'schedule': 60 * 5
+    },
 }

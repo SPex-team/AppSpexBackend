@@ -48,6 +48,9 @@ class Loan(models.Model):
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        unique_together = (("miner_id", "user_address"), )
+
 
 class SellItem(models.Model):
     miner_id = models.BigIntegerField(db_index=True)
@@ -76,3 +79,27 @@ class Comment(models.Model):
 
     create_time = models.DateTimeField(auto_now_add=True, db_index=True)
     update_time = models.DateTimeField(auto_now=True)
+
+
+class LoanItem(models.Model):
+    miner_id = models.BigIntegerField(db_index=True)
+    user_address = models.CharField(max_length=42)
+
+    annual_interest_rate = models.FloatField(default=0)
+    amount_human = models.FloatField()
+
+    create_time = models.DateTimeField(auto_now_add=True, db_index=True)
+    update_time = models.DateTimeField(auto_now=True)
+
+
+class PaybackItem(models.Model):
+    miner_id = models.BigIntegerField(db_index=True)
+    user_address = models.CharField(max_length=42)
+
+    amount_human = models.FloatField()
+
+    interest_human = models.FloatField()
+
+    create_time = models.DateTimeField(auto_now_add=True, db_index=True)
+    update_time = models.DateTimeField(auto_now=True)
+

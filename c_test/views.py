@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from django.core.mail import send_mail
 from django.conf import settings
 from spex import tasks as spex_tasks
+from loan import tasks as loan_tasks
 
 
 class TestUser(viewsets.ModelViewSet):
@@ -22,7 +23,7 @@ class TestUser(viewsets.ModelViewSet):
         #           html_message=html_message)
 
         if settings.ENV == "LOCAL":
-            spex_tasks.sync_new_orders()
+            loan_tasks.update_all_loans()
 
         time.sleep(72)
         return Response({})
@@ -34,5 +35,5 @@ class TestUser(viewsets.ModelViewSet):
         # spex_tasks.update_all_miners()
 
         if settings.ENV == "LOCAL":
-            spex_tasks.update_all_miners()
+            loan_tasks.sync_new_miners()
         return Response({})

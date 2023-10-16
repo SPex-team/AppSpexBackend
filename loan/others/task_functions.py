@@ -25,9 +25,9 @@ def get_miner_balances(miner_id: str):
         None
     ]
     ret_data = filecoin_client.request(method="Filecoin.StateReadState", params=params)
-    total_balance_human = ret_data["Balance"] / 1e18
-    locked_balance_human = ret_data["State"]["LockedFunds"] / 1e18
-    pledge_balance_human = ret_data["State"]["InitialPledge"] / 1e18
+    total_balance_human = int(ret_data["Balance"]) / 1e18
+    locked_balance_human = int(ret_data["State"]["LockedFunds"]) / 1e18
+    pledge_balance_human = int(ret_data["State"]["InitialPledge"]) / 1e18
     available_balance_human = total_balance_human - locked_balance_human - pledge_balance_human
     return total_balance_human, available_balance_human, pledge_balance_human, locked_balance_human
 
