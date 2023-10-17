@@ -23,7 +23,7 @@ class TestUser(viewsets.ModelViewSet):
         #           html_message=html_message)
 
         if settings.ENV == "LOCAL":
-            loan_tasks.update_all_loans()
+            loan_tasks.update_all_miners()
 
         time.sleep(72)
         return Response({})

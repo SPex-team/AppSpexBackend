@@ -121,7 +121,7 @@ def update_miner(miner: l_models.Miner):
     miner.last_debt_amount_raw = miner_chain_info[6]
     miner.last_debt_amount_human = miner_chain_info[6] / DECIMALS
     miner.last_update_timestamp = miner_chain_info[7]
-    miner.disabled = False if miner_chain_info[5] == 0 else True
+    miner.disabled = miner_chain_info[5]
 
     try:
         total_balance_human, available_balance_human, pledge_balance_human, locked_balance_human = l_task_functions. \
@@ -209,11 +209,11 @@ def update_loan(loan: l_models.Loan):
     now = datetime.datetime.now()
     interval_time = now.timestamp() - loan.create_time.timestamp()
 
-    if last_amount == 0 and interval_time > 600:
-        logger.info(
-            f"the loan is not in chain, delete the loan loan.user_address: {loan.user_address} loan.miner_id: {loan.miner_id}")
-        loan.delete()
-        return
+    # if last_amount == 0 and interval_time > 600:
+    #     logger.info(
+    #         f"the loan is not in chain, delete the loan loan.user_address: {loan.user_address} loan.miner_id: {loan.miner_id}")
+    #     loan.delete()
+    #     return
     miner = l_models.Miner.objects.get(miner_id=loan.miner_id)
 
     loan.miner_total_balance_human = miner.total_balance_human
