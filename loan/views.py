@@ -23,6 +23,8 @@ from eth_account.messages import encode_defunct
 
 from . import filters as l_filters
 from . import tasks as l_tasks
+from .others import task_functions as l_task_functions
+
 
 from devops_django import mixins as dd_mixins
 
@@ -47,6 +49,22 @@ class Miner(dd_mixins.AggregationMixin, viewsets.ModelViewSet):
         if count > 0:
             raise exceptions.ParseError("miner already in SPex")
         return Response({})
+
+    @action(methods=["get"], detail=False, url_path="balances")
+    @dd_decorators.parameter("miner_id", int)
+    def c_get_balances(self, request, miner_id, *args, **kwargs):
+        try:
+            total_balance_human, available_balance_human, pledge_balance_human, locked_balance_human = l_task_functions.\
+                get_miner_balances(f"{settings.ADDRESS_PREFIX}0{miner_id}")
+        except Exception as exc:
+            raise exceptions.ParseError(f"Failed to get miner balances exc: {exc}")
+        data = {
+            "total_balance_human": total_balance_human,
+            "available_balance_human": available_balance_human,
+            "pledge_balance_human": pledge_balance_human,
+            "locked_balance_human": locked_balance_human
+        }
+        return Response(data)
 
 
 class Loan(dd_mixins.AggregationMixin, viewsets.ModelViewSet):

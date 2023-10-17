@@ -34,11 +34,11 @@ app.conf.beat_schedule = {
         'schedule': 60 * 5
     },
     'sync_loan_new_loans': {
-        'task': 'spex.tasks.sync_new_loans',
+        'task': 'loan.tasks.sync_new_loans',
         'schedule': 60 * 2
     },
     'update_loan_all_loans': {
-        'task': 'spex.tasks.update_all_loans',
+        'task': 'loan.tasks.update_all_loans',
         'schedule': 60 * 5
     },
 }
