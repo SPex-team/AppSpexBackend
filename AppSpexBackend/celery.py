@@ -41,4 +41,12 @@ app.conf.beat_schedule = {
         'task': 'loan.tasks.update_all_loans',
         'schedule': 60 * 5
     },
+    'sync_new_withdraw_repayment': {
+        'task': 'loan.tasks.sync_new_withdraw_repayment',
+        'schedule': 60 * 5
+    },
+    'sync_new_wallet_repayment': {
+        'task': 'loan.tasks.sync_new_wallet_repayment',
+        'schedule': 60 * 5
+    }
 }
