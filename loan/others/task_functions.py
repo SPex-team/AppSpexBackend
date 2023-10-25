@@ -182,12 +182,14 @@ def update_miner(miner: l_models.Miner):
 
     current_total_debt, current_total_principal = spex_contract.functions.getCurrentTotalDebtAmount(miner.miner_id).call()
 
+    annual_interest_rate_human = miner_chain_info[3] / RATE_BASE * 100
+
     miner.delegator_address = owner
     # list_miner_info = spex_contract.functions.getListMinerById(miner.miner_id).call()
     miner.max_debt_amount_raw = miner_chain_info[2]
     miner.max_debt_amount_human = miner_chain_info[2] / DECIMALS
     miner.receive_address = miner_chain_info[4].lower()
-    miner.annual_interest_rate_human = miner_chain_info[3] / RATE_BASE * 100
+    miner.annual_interest_rate_human = annual_interest_rate_human
     miner.last_debt_amount_raw = miner_chain_info[7]
     miner.last_debt_amount_human = miner_chain_info[7] / DECIMALS
     miner.last_update_timestamp = miner_chain_info[8]
@@ -208,6 +210,17 @@ def update_miner(miner: l_models.Miner):
         miner.locked_rewards_human = locked_balance_human
 
         miner.collateral_rate = current_total_debt / DECIMALS / total_balance_human * 100
+
+        l_models.Loan.objects.filter(miner_id=miner.miner_id).update(
+            miner_total_balance_human=total_balance_human,
+            annual_interest_rate_human=annual_interest_rate_human
+        )
+
+        # miner = l_models.Miner.objects.get(miner_id=loan.miner_id)
+
+        # loan.miner_total_balance_human = miner.total_balance_human
+        # loan.annual_interest_rate_human = miner.annual_interest_rate_human
+
     except Exception as exc:
         logger.warning(f"get total balance error: {exc}")
     # o_objects.MinerLastInfo.update_from_miner(miner)
@@ -293,11 +306,6 @@ def update_loan(loan: l_models.Loan):
     #     #     f"the loan is not in chain, delete the loan loan.user_address: {loan.user_address} loan.miner_id: {loan.miner_id}")
     #     # loan.delete()
     #     return
-
-    miner = l_models.Miner.objects.get(miner_id=loan.miner_id)
-
-    loan.miner_total_balance_human = miner.total_balance_human
-    loan.annual_interest_rate_human = miner.annual_interest_rate_human
 
     loan.last_amount_raw = loan_on_chain_info[0]
     loan.last_amount_human = loan_on_chain_info[0] / 1e18
