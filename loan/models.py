@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 
 class Miner(models.Model):
@@ -23,7 +24,7 @@ class Miner(models.Model):
     initial_pledge_human = models.FloatField(default=0)
     locked_rewards_human = models.FloatField(default=0)
 
-    last_list_time = models.DateTimeField(auto_now=True)
+    last_list_time = models.DateTimeField(default=timezone.now)
     completed = models.BooleanField(default=False)
 
     current_total_debt_human = models.FloatField(default=0)
