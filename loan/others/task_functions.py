@@ -267,9 +267,9 @@ def process_new_loan_log(log, tag):
     loan, is_new = l_models.Loan.objects.get_or_create(miner_id=miner_id, user_address=buyer)
     if is_new is False:
         # loan.current_total_amount_raw = str(int(loan.current_total_amount_raw) + amount)
-        loan.current_principal_human += amount / 1e18
-        loan.last_update_timestamp = log_timestamp
-        loan.save()
+        # loan.current_principal_human += amount / 1e18
+        # loan.last_update_timestamp = log_timestamp
+        # loan.save()
         return
     loan.transaction_hash = log["transactionHash"]
     loan.user_address = buyer
@@ -298,7 +298,7 @@ def update_loan(loan: l_models.Loan):
     interval_time = now.timestamp() - loan.create_time.timestamp()
 
     current_principal_interest, current_total_principal = spex_contract.functions.getCurrentAmountOwedToLender(user_address_checksum, loan.miner_id).call()
-    logger.debug(f"loan.id: {loan.id} current_principal_interest: {current_principal_interest} current_total_principal: {current_total_principal}")
+    # logger.debug(f"loan.id: {loan.id} current_principal_interest: {current_principal_interest} current_total_principal: {current_total_principal}")
 
     # if last_amount == 0 and interval_time > 600:
     #     loan.completed = True
