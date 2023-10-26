@@ -213,7 +213,7 @@ def update_miner(miner: l_models.Miner):
 
         l_models.Loan.objects.filter(miner_id=miner.miner_id).update(
             miner_total_balance_human=total_balance_human,
-            annual_interest_rate_human=annual_interest_rate_human
+            annual_interest_rate=annual_interest_rate_human
         )
 
         # miner = l_models.Miner.objects.get(miner_id=loan.miner_id)
@@ -298,6 +298,7 @@ def update_loan(loan: l_models.Loan):
     interval_time = now.timestamp() - loan.create_time.timestamp()
 
     current_principal_interest, current_total_principal = spex_contract.functions.getCurrentAmountOwedToLender(user_address_checksum, loan.miner_id).call()
+    logger.debug(f"loan.id: {loan.id} current_principal_interest: {current_principal_interest} current_total_principal: {current_total_principal}")
 
     # if last_amount == 0 and interval_time > 600:
     #     loan.completed = True
@@ -307,9 +308,9 @@ def update_loan(loan: l_models.Loan):
     #     # loan.delete()
     #     return
 
-    loan.last_amount_raw = loan_on_chain_info[0]
-    loan.last_amount_human = loan_on_chain_info[0] / 1e18
-    loan.last_update_timestamp = loan_on_chain_info[1]
+    loan.last_amount_raw = loan_on_chain_info[1]
+    loan.last_amount_human = loan_on_chain_info[1] / 1e18
+    loan.last_update_timestamp = loan_on_chain_info[2]
 
     loan.completed = True if last_amount == 0 and interval_time > 600 else False
     loan.current_principal_human = current_total_principal / DECIMALS
