@@ -37,7 +37,7 @@ class FilecoinClient:
 
     def wait_message(self, cid: str):
         params = [{"/": cid}, 3, 100, False]
-        return self.request(method="Filecoin.StateWaitMsg", params=params, timeout=60)
+        return self.request(method="Filecoin.StateWaitMsg", params=params, timeout=120)
 
     def get_latest_block_number(self):
         result = self.request(method="eth_blockNumber", params=[], timeout=60)
