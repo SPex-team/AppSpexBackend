@@ -52,11 +52,14 @@ class Keytool:
     def build_message(self, _from: str, to: str, method: int, args: str):
         cmd = f"./keytool message build --from {_from} -t {to} --method {method} --args='{args}'"
         stdout = self.run_cmd(cmd)
-        msg_cid_hex = stdout.split("msgCidHex__")[1].split("__msgCidHex")[0]
-        msg_cid_str = stdout.split("msgCidStr__")[1].split("__msgCidStr")[0]
-        msg_hex = stdout.split("msgHex__")[1].split("__msgHex")[0]
-        msg_detail = stdout.split("|detail:")[1].split("|build message success")[0]
-        return msg_cid_hex, msg_cid_str, msg_hex, msg_detail
+        try:
+            msg_cid_hex = stdout.split("msgCidHex__")[1].split("__msgCidHex")[0]
+            msg_cid_str = stdout.split("msgCidStr__")[1].split("__msgCidStr")[0]
+            msg_hex = stdout.split("msgHex__")[1].split("__msgHex")[0]
+            msg_detail = stdout.split("|detail:")[1].split("|build message success")[0]
+            return msg_cid_hex, msg_cid_str, msg_hex, msg_detail
+        except IndexError:
+            raise Exception(stdout)
 
     def push_message_spex(self, message: str, sign: str):
         cmd = f"./keytool message push_spex --message {message} --sign {sign}"

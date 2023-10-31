@@ -1,3 +1,4 @@
+import json
 import logging
 import time
 from datetime import datetime
@@ -187,6 +188,8 @@ class Message(viewsets.GenericViewSet):
         filecoin_client = FilecoinClient(settings.ETH_HTTP_PROVIDER, settings.FILECOIN_API_TOKEN)
         miner_id = params_serializer.validated_data['miner_id']
         miner_id_str = f"{settings.ADDRESS_PREFIX}0{miner_id}"
+        to_address = params_serializer.validated_data["to_address"]
+        to_address = settings.SPEX_CONTRACT_T0_ADDRESS if to_address is None else to_address
         try:
             miner_info = filecoin_client.get_miner_info(miner_id=miner_id)
         except Exception as exc:
@@ -196,7 +199,7 @@ class Message(viewsets.GenericViewSet):
         try:
             msg_cid_hex, msg_cid_str, msg_hex, msg_detail = keytool.build_change_owner_message(miner_info["Owner"],
                                                                                                miner_id_str,
-                                                                                               f'"{settings.SPEX_LOAN_CONTRACT_T0_ADDRESS}"')
+                                                                                               f'"{to_address}"')
         except Exception as exc:
             logger.debug(f"Build miner {miner_id} message error: {exc}")
             raise exceptions.ParseError(f"Build message error: {exc}")
@@ -266,6 +269,8 @@ class Message(viewsets.GenericViewSet):
         filecoin_client = FilecoinClient(settings.ETH_HTTP_PROVIDER, settings.FILECOIN_API_TOKEN)
         miner_id = params_serializer.validated_data['miner_id']
         miner_id_str = f"{settings.ADDRESS_PREFIX}0{miner_id}"
+        to_address = params_serializer.validated_data["to_address"]
+        to_address = settings.SPEX_LOAN_CONTRACT_T0_ADDRESS if to_address is None else to_address
         try:
             miner_info = filecoin_client.get_miner_info(miner_id=miner_id)
         except Exception as exc:
@@ -276,7 +281,7 @@ class Message(viewsets.GenericViewSet):
             msg_cid_hex, msg_cid_str, msg_hex, msg_detail = keytool.build_change_beneficiary_message(
                 miner_info["Beneficiary"],
                 miner_id_str,
-                f"{settings.SPEX_LOAN_CONTRACT_T0_ADDRESS}",
+                f"{to_address}",
                 "99999999999999999999999999999999999999999999999999000000000000000000",
                 9223372036854775807)
         except Exception as exc:
@@ -288,6 +293,38 @@ class Message(viewsets.GenericViewSet):
             "msg_hex": msg_hex,
             "msg_detail": msg_detail,
             "miner_info": miner_info
+        }
+        return Response(data)
+
+    @action(methods=["post"], detail=False, url_path="build-change-beneficiary-out")
+    def c_build_change_beneficiary_out(self, request, *args, **kwargs):
+        params_serializer = l_serializers.BuildChangeBeneficiaryOut(data=request.data)
+        params_serializer.is_valid(raise_exception=True)
+        miner_id = params_serializer.validated_data['miner_id']
+        miner_id_str = f"{settings.ADDRESS_PREFIX}0{miner_id}"
+        keytool = Keytool(settings.KEY_TOOL_PATH)
+
+        args_dict = {
+            "NewBeneficiary": params_serializer.validated_data["new_beneficiary"],
+            "NewQuota": params_serializer.validated_data["new_quota"],
+            "NewExpiration": params_serializer.validated_data["new_expiration"],
+        }
+        args_str = json.dumps(args_dict)
+        try:
+            msg_cid_hex, msg_cid_str, msg_hex, msg_detail = keytool.build_message(
+                _from=params_serializer.validated_data["new_beneficiary"],
+                to=miner_id_str,
+                method=30,
+                args=args_str
+            )
+        except Exception as exc:
+            logger.debug(f"Build build_change_beneficiary_out error message error miner_id: {miner_id} exc: {exc}")
+            raise exceptions.ParseError(f"Build message error: {exc}")
+        data = {
+            "msg_cid_hex": msg_cid_hex,
+            "msg_cid_str": msg_cid_str,
+            "msg_hex": msg_hex,
+            "msg_detail": msg_detail,
         }
         return Response(data)
 
