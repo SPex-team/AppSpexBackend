@@ -46,12 +46,12 @@ class ListMinerArgs(serializers.Serializer):
 
 class BuildChangeOwnerIn(serializers.Serializer):
     miner_id = serializers.IntegerField()
-    to_address = serializers.IntegerField(default=None, allow_null=True)
+    to_address = serializers.CharField(default=None, allow_null=True)
 
 
 class BuildChangeBeneficiaryIn(serializers.Serializer):
     miner_id = serializers.IntegerField()
-    to_address = serializers.IntegerField(default=None, allow_null=True)
+    to_address = serializers.CharField(default=None, allow_null=True)
 
 
 class BuildChangeOwnerOut(serializers.Serializer):
