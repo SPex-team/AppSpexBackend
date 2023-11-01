@@ -303,16 +303,22 @@ class Message(viewsets.GenericViewSet):
         miner_id = params_serializer.validated_data['miner_id']
         miner_id_str = f"{settings.ADDRESS_PREFIX}0{miner_id}"
         keytool = Keytool(settings.KEY_TOOL_PATH)
+        filecoin_client = FilecoinClient(settings.ETH_HTTP_PROVIDER, settings.FILECOIN_API_TOKEN)
+        try:
+            miner_info = filecoin_client.get_miner_info(miner_id=miner_id)
+        except Exception as exc:
+            logger.debug(f"get miner {miner_id} info error: {exc}")
+            raise exceptions.ParseError(f"get miner info error: {exc}")
 
         args_dict = {
-            "NewBeneficiary": params_serializer.validated_data["new_beneficiary"],
-            "NewQuota": params_serializer.validated_data["new_quota"],
-            "NewExpiration": params_serializer.validated_data["new_expiration"],
+            "NewBeneficiary": miner_info["Owner"],
+            "NewQuota": "0",
+            "NewExpiration": 0,
         }
         args_str = json.dumps(args_dict)
         try:
             msg_cid_hex, msg_cid_str, msg_hex, msg_detail = keytool.build_message(
-                _from=params_serializer.validated_data["new_beneficiary"],
+                _from=miner_info["Owner"],
                 to=miner_id_str,
                 method=30,
                 args=args_str
@@ -328,9 +334,37 @@ class Message(viewsets.GenericViewSet):
         }
         return Response(data)
 
-    # @action(methods=["post"], detail=False, url_path="push-wait")
-    # def c_push_wait_message(self, request, *args, **kwargs):
-    #     pass
+    # @action(methods=["post"], detail=False, url_path="build-change-beneficiary")
+    # def c_build_change_beneficiary(self, request, *args, **kwargs):
+    #     params_serializer = l_serializers.BuildChangeBeneficiary(data=request.data)
+    #     params_serializer.is_valid(raise_exception=True)
+    #     miner_id = params_serializer.validated_data['miner_id']
+    #     miner_id_str = f"{settings.ADDRESS_PREFIX}0{miner_id}"
+    #     keytool = Keytool(settings.KEY_TOOL_PATH)
+    #
+    #     args_dict = {
+    #         "NewBeneficiary": params_serializer.validated_data["new_beneficiary"],
+    #         "NewQuota": params_serializer.validated_data["new_quota"],
+    #         "NewExpiration": params_serializer.validated_data["new_expiration"],
+    #     }
+    #     args_str = json.dumps(args_dict)
+    #     try:
+    #         msg_cid_hex, msg_cid_str, msg_hex, msg_detail = keytool.build_message(
+    #             _from=params_serializer.validated_data["new_beneficiary"],
+    #             to=miner_id_str,
+    #             method=30,
+    #             args=args_str
+    #         )
+    #     except Exception as exc:
+    #         logger.debug(f"Build build_change_beneficiary_out error message error miner_id: {miner_id} exc: {exc}")
+    #         raise exceptions.ParseError(f"Build message error: {exc}")
+    #     data = {
+    #         "msg_cid_hex": msg_cid_hex,
+    #         "msg_cid_str": msg_cid_str,
+    #         "msg_hex": msg_hex,
+    #         "msg_detail": msg_detail,
+    #     }
+    #     return Response(data)
 
 
 class Comment(mixins.RetrieveModelMixin,

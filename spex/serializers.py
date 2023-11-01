@@ -61,6 +61,10 @@ class BuildChangeOwnerOut(serializers.Serializer):
 
 class BuildChangeBeneficiaryOut(serializers.Serializer):
     miner_id = serializers.IntegerField()
+
+
+class BuildChangeBeneficiary(serializers.Serializer):
+    miner_id = serializers.IntegerField()
     new_beneficiary = serializers.CharField()
     new_quota = serializers.CharField()
     new_expiration = serializers.IntegerField()
