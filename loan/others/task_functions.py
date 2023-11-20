@@ -156,18 +156,18 @@ def update_miner(miner: l_models.Miner):
     miner_chain_info = spex_contract.functions._miners(miner.miner_id).call()
     owner = miner_chain_info[1].lower()
 
-    transfer_out_delegator = spex_contract.functions._releasedMinerDelegators(miner.miner_id).call()
-    transfer_out_delegator = transfer_out_delegator.lower()
+    # transfer_out_delegator = spex_contract.functions._releasedMinerDelegators(miner.miner_id).call()
+    # transfer_out_delegator = transfer_out_delegator.lower()
 
     now = datetime.datetime.now()
     interval_time = now.timestamp() - miner.create_time.timestamp()
 
     if owner == "0x0000000000000000000000000000000000000000" and interval_time > 600:
 
-        if transfer_out_delegator == "0x0000000000000000000000000000000000000000":
-            logger.info(f"the miner not in delegator and transfer_out_delegator, delete miner {miner.miner_id}")
-            miner.delete()
-            return
+        # if transfer_out_delegator == "0x0000000000000000000000000000000000000000":
+        #     logger.info(f"the miner not in delegator and transfer_out_delegator, delete miner {miner.miner_id}")
+        #     miner.delete()
+        #     return
 
         filecoin_client = o_filecoin.FilecoinClient(settings.ETH_HTTP_PROVIDER, settings.FILECOIN_API_TOKEN)
         miner_info = filecoin_client.get_miner_info(miner.miner_id)
