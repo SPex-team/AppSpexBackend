@@ -87,7 +87,7 @@ def sync_new_loans():
 
     logger.info(f"from_block: {from_block} to_block: {to_block}")
     log_list = filecoin_client.get_logs(from_block, to_block, settings.ETH_LOAN_CONTRACT_ADDRESS,
-                                        topics=[settings.SPEX_LOAN_BUY_DEBT_TOPIC])
+                                        topics=[settings.SPEX_LOAN_LEND_TO_MINER_TOPIC])
     for log in log_list:
         l_task_functions.process_new_loan_log(log, tag)
 

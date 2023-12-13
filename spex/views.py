@@ -250,7 +250,7 @@ class Message(viewsets.GenericViewSet):
             keytool.push_message_spex(message=message, sign=sign)
             # time.sleep(2)
         except Exception as exc:
-            logger.debug(f"Push message error, message: {message} sign: {sign}")
+            logger.debug(f"Push message error, message: {message} sign: {sign} exc: {exc}")
             raise exceptions.ParseError(f"Push message error: {exc}")
         data = {}
         if params_serializer.validated_data["wait"]:

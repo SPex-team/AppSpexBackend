@@ -9,13 +9,14 @@ class Miner(models.Model):
     max_debt_amount_human = models.FloatField(default=0, db_index=True)
     receive_address = models.CharField(max_length=42)
 
-    # daily_interest_rate = models.FloatField(default=0)
     annual_interest_rate_human = models.FloatField(default=0)
 
-    last_debt_amount_raw = models.CharField(max_length=80, blank=True, default="0")
-    last_debt_amount_human = models.FloatField(default=0)
-    last_update_timestamp = models.BigIntegerField(default=1675156423)
     disabled = models.BooleanField(default=False)
+    principal_amount_raw = models.CharField(max_length=80, blank=True, default="0")
+    principal_amount_human = models.FloatField(default=0)
+    max_lender_count = models.IntegerField(default=0)
+    min_lend_amount_raw = models.CharField(max_length=80, blank=True, default="0")
+    min_lend_amount_human = models.FloatField(default=0)
 
     collateral_rate = models.FloatField(default=0)
 
@@ -41,10 +42,9 @@ class Loan(models.Model):
 
     miner_total_balance_human = models.FloatField(default=0)
 
-    daily_interest_rate = models.FloatField(default=0)
     annual_interest_rate = models.FloatField(default=0)
 
-    # current_principal_raw = models.CharField(max_length=80, blank=True, default="0")
+    current_principal_raw = models.CharField(max_length=80, blank=True, default="0")
     current_principal_human = models.FloatField(default=0)
 
     current_interest_human = models.FloatField(default=0)

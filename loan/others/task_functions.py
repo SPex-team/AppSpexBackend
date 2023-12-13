@@ -163,12 +163,6 @@ def update_miner(miner: l_models.Miner):
     interval_time = now.timestamp() - miner.create_time.timestamp()
 
     if owner == "0x0000000000000000000000000000000000000000" and interval_time > 600:
-
-        # if transfer_out_delegator == "0x0000000000000000000000000000000000000000":
-        #     logger.info(f"the miner not in delegator and transfer_out_delegator, delete miner {miner.miner_id}")
-        #     miner.delete()
-        #     return
-
         filecoin_client = o_filecoin.FilecoinClient(settings.ETH_HTTP_PROVIDER, settings.FILECOIN_API_TOKEN)
         miner_info = filecoin_client.get_miner_info(miner.miner_id)
         if miner_info["Beneficiary"][1:] != settings.SPEX_LOAN_CONTRACT_T0_ADDRESS[1:]:
@@ -178,22 +172,20 @@ def update_miner(miner: l_models.Miner):
             miner.is_submitted_transfer_out = True
             miner.save()
         return
-
-
-    current_total_debt, current_total_principal = spex_contract.functions.getCurrentTotalDebtAmount(miner.miner_id).call()
+    current_total_debt, current_total_principal = spex_contract.functions.getCurrentMinerOwedAmount(miner.miner_id).call()
 
     annual_interest_rate_human = miner_chain_info[3] / RATE_BASE * 100
 
     miner.delegator_address = owner
-    # list_miner_info = spex_contract.functions.getListMinerById(miner.miner_id).call()
     miner.max_debt_amount_raw = miner_chain_info[2]
     miner.max_debt_amount_human = miner_chain_info[2] / DECIMALS
     miner.receive_address = miner_chain_info[4].lower()
     miner.annual_interest_rate_human = annual_interest_rate_human
-    miner.last_debt_amount_raw = miner_chain_info[7]
-    miner.last_debt_amount_human = miner_chain_info[7] / DECIMALS
-    miner.last_update_timestamp = miner_chain_info[8]
     miner.disabled = miner_chain_info[5]
+
+    miner.max_lender_count = miner_chain_info[7]
+    miner.min_lend_amount_raw = str(miner_chain_info[8])
+    miner.min_lend_amount_human = miner_chain_info[8] / DECIMALS
 
     miner.current_total_debt_human = current_total_debt / DECIMALS
     miner.current_total_principal_human = current_total_principal / DECIMALS
@@ -209,7 +201,7 @@ def update_miner(miner: l_models.Miner):
         miner.initial_pledge_human = pledge_balance_human
         miner.locked_rewards_human = locked_balance_human
 
-        miner.collateral_rate = current_total_debt / DECIMALS / total_balance_human * 100
+        miner.collateral_rate = total_balance_human / (current_total_debt / DECIMALS) * 100
 
         l_models.Loan.objects.filter(miner_id=miner.miner_id).update(
             miner_total_balance_human=total_balance_human,
@@ -293,32 +285,23 @@ def update_loan(loan: l_models.Loan):
     spex_contract = get_spex_loan_contract()
     user_address_checksum = Web3.to_checksum_address(loan.user_address)
     loan_on_chain_info = spex_contract.functions._loans(user_address_checksum, loan.miner_id).call()
-    last_amount = loan_on_chain_info[0]
+    last_amount = loan_on_chain_info[1]
     now = datetime.datetime.now()
     interval_time = now.timestamp() - loan.create_time.timestamp()
 
-    current_principal_interest, current_total_principal = spex_contract.functions.getCurrentAmountOwedToLender(user_address_checksum, loan.miner_id).call()
-    # logger.debug(f"loan.id: {loan.id} current_principal_interest: {current_principal_interest} current_total_principal: {current_total_principal}")
-
-    # if last_amount == 0 and interval_time > 600:
-    #     loan.completed = True
-    #     loan.save()
-    #     # logger.info(
-    #     #     f"the loan is not in chain, delete the loan loan.user_address: {loan.user_address} loan.miner_id: {loan.miner_id}")
-    #     # loan.delete()
-    #     return
+    current_principal_interest, current_total_principal = spex_contract.functions.getCurrentLenderOwedAmount(user_address_checksum, loan.miner_id).call()
 
     loan.last_amount_raw = loan_on_chain_info[1]
     loan.last_amount_human = loan_on_chain_info[1] / 1e18
     loan.last_update_timestamp = loan_on_chain_info[2]
 
     loan.completed = True if last_amount == 0 and interval_time > 600 else False
+    loan.current_principal_raw = str(current_total_principal)
     loan.current_principal_human = current_total_principal / DECIMALS
     loan.current_interest_human = (current_principal_interest - current_total_principal) / 1e18
     loan.current_total_amount_human = current_principal_interest / DECIMALS
 
     loan.save()
-
 
 
 def sync_new_repayment(_type, topic):
